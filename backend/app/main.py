@@ -8,6 +8,7 @@ from app.services.scheduler import start_scheduler, stop_scheduler
 from app.api.context import router as context_router
 from app.api.ai import router as ai_router
 from app.api.handoff import router as handoff_router
+from app.api.scheduler import router as scheduler_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,6 +37,7 @@ app.add_middleware(
 app.include_router(context_router)
 app.include_router(ai_router)
 app.include_router(handoff_router)
+app.include_router(scheduler_router)
 
 @app.get("/health")
 def health_check():
