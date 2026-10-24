@@ -17,8 +17,10 @@ app.add_middleware(
 )
 
 from app.api.context import router as context_router
+from app.api.ai import router as ai_router
 
 app.include_router(context_router)
+app.include_router(ai_router)
 
 @app.get("/health")
 def health_check():
