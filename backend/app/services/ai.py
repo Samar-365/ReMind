@@ -70,7 +70,7 @@ class OllamaService:
             }
         }
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with httpx.AsyncClient(timeout=180.0) as client:
             try:
                 response = await client.post(
                     f"{self.base_url}/api/generate",
@@ -79,8 +79,13 @@ class OllamaService:
                 response.raise_for_status()
                 result = response.json()
                 raw_response = result.get("response", "")
+            except httpx.ConnectError:
+                raise RuntimeError("Could not connect to Ollama on http://localhost:11434. Please ensure Ollama is running.")
+            except httpx.TimeoutException:
+                raise RuntimeError("Ollama model response timed out. The model may still be loading into RAM.")
             except httpx.HTTPError as e:
-                raise RuntimeError(f"Ollama generation request failed: {str(e)}")
+                err_detail = e.response.text if hasattr(e, "response") and e.response else str(e)
+                raise RuntimeError(f"Ollama generation request failed: {err_detail}")
 
         # Parse and validate schema
         try:
