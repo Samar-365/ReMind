@@ -3,11 +3,12 @@ import {
   GitBranch, 
   Terminal, 
   Globe, 
-  FolderGit2, 
-  FileEdit, 
+  Cpu, 
+  Activity, 
   Sparkles, 
   Loader2, 
-  ShieldCheck 
+  ShieldCheck,
+  Radio
 } from 'lucide-react';
 
 export default function SessionHero({ 
@@ -25,96 +26,102 @@ export default function SessionHero({
   const untrackedCount = status.untracked?.length || 0;
 
   return (
-    <div className="glass-panel" style={{ borderColor: 'rgba(99, 102, 241, 0.25)' }}>
-      <div className="flex flex-col lg-flex-row justify-between items-start gap-6" style={{ position: 'relative', zIndex: 10 }}>
+    <div className="cyber-panel">
+      <div className="flex flex-col lg-flex-row justify-between items-start gap-6">
         <div>
+          {/* Status Badges */}
           <div className="flex items-center gap-2" style={{ marginBottom: '0.75rem' }}>
-            <span className="badge badge-emerald">
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34D399', display: 'inline-block' }} className="animate-pulse"></span>
-              Live Daemon Active
+            <span className="cyber-badge badge-emerald">
+              <Radio size={12} className="animate-pulse" />
+              DAEMON // ONLINE
             </span>
-            <span className="badge badge-slate">
-              <ShieldCheck size={14} style={{ color: '#818CF8' }} />
-              Privacy Shield On (Local Gemma)
+            <span className="cyber-badge badge-dim">
+              <ShieldCheck size={12} style={{ color: 'var(--neon-cyan)' }} />
+              AIRGAP_SHIELD // LOCAL_GEMMA
+            </span>
+            <span className="cyber-badge badge-cyan">
+              TELEMETRY_PORT // 8001
             </span>
           </div>
 
-          <h1 className="title-main flex items-center gap-3" style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>
-            <FolderGit2 size={28} style={{ color: '#818CF8' }} />
-            {git.repo_name ? git.repo_name : "Workspace Ready"}
+          {/* Repo Name */}
+          <h1 className="cyber-title flex items-center gap-3" style={{ marginBottom: '0.5rem' }}>
+            <Cpu size={24} style={{ color: 'var(--neon-cyan)' }} />
+            <span>SYS_REPO: {git.repo_name ? git.repo_name.toUpperCase() : "ROOT_WORKSPACE"}</span>
           </h1>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted" style={{ marginTop: '0.75rem' }}>
-            <div className="flex items-center gap-2 badge-slate" style={{ padding: '0.35rem 0.75rem', borderRadius: '8px' }}>
-              <GitBranch size={15} style={{ color: '#818CF8' }} />
-              <span className="font-mono text-xs" style={{ color: '#F1F5F9' }}>{git.branch || 'main'}</span>
+          {/* Metrics bar */}
+          <div className="flex flex-wrap items-center gap-4 text-xs" style={{ marginTop: '0.75rem' }}>
+            <div className="flex items-center gap-1.5 cyber-badge badge-dim">
+              <GitBranch size={13} style={{ color: 'var(--neon-cyan)' }} />
+              <span style={{ color: '#fff' }}>BRANCH: {git.branch || 'main'}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="status-chip chip-staged">
-                {stagedCount} staged
+              <span className="status-pill pill-staged">
+                +{stagedCount} STAGED
               </span>
-              <span className="status-chip chip-modified">
-                {unstagedCount} modified
+              <span className="status-pill pill-modified">
+                ~{unstagedCount} MODIFIED
               </span>
-              <span className="status-chip chip-untracked">
-                {untrackedCount} untracked
+              <span className="status-pill pill-untracked">
+                ?{untrackedCount} UNTRACKED
               </span>
             </div>
 
-            <div className="flex items-center gap-1 text-xs text-muted">
-              <Terminal size={14} />
-              <span>{context?.terminal?.commands?.length || 0} terminal cmds</span>
+            <div className="flex items-center gap-1.5 text-muted">
+              <Terminal size={13} />
+              <span>LOGS: {context?.terminal?.commands?.length || 0} CMDS</span>
             </div>
 
-            <div className="flex items-center gap-1 text-xs text-muted">
-              <Globe size={14} />
-              <span>{context?.browser?.tabs?.length || 0} research tabs</span>
+            <div className="flex items-center gap-1.5 text-muted">
+              <Globe size={13} />
+              <span>TABS: {context?.browser?.tabs?.length || 0} REFS</span>
             </div>
           </div>
         </div>
 
-        {/* Action Button & Stepper */}
-        <div className="flex flex-col items-start gap-2" style={{ minWidth: '260px' }}>
+        {/* Action Button */}
+        <div className="flex flex-col items-start gap-2" style={{ minWidth: '280px' }}>
           <button
             onClick={onGenerate}
             disabled={isGenerating}
-            className="btn-primary"
+            className="btn-cyber-primary"
             style={{ width: '100%' }}
           >
             {isGenerating ? (
               <>
-                <Loader2 size={18} className="animate-spin" />
-                <span>{stepStage || "Synthesizing Handoff..."}</span>
+                <Loader2 size={16} className="animate-spin" />
+                <span>{stepStage || "PROCESSING..."}</span>
               </>
             ) : (
               <>
-                <Sparkles size={18} />
-                <span>Generate Tomorrow-Me Handoff</span>
+                <Sparkles size={16} />
+                <span>EXECUTE // HANDOFF_SYNTHESIS</span>
               </>
             )}
           </button>
 
           {isGenerating && (
-            <p className="text-xs animate-pulse" style={{ color: '#A5B4FC', textAlign: 'center', width: '100%' }}>
-              Analyzing diffs & drafting 7-section resumption note...
+            <p className="text-xs animate-pulse" style={{ color: 'var(--neon-cyan)', textAlign: 'center', width: '100%' }}>
+              [INFERENCE RUNNING // PARSING AST DIFFS]
             </p>
           )}
         </div>
       </div>
 
-      {/* Optional Note input */}
-      <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase text-muted" style={{ marginBottom: '0.5rem' }}>
-          <FileEdit size={14} style={{ color: '#818CF8' }} />
-          <span>Session Context Note (Optional)</span>
+      {/* Developer Context Injector */}
+      <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-dim)' }}>
+        <div className="flex items-center gap-2 cyber-label" style={{ marginBottom: '0.5rem' }}>
+          <Activity size={13} />
+          <span>INJECT_SESSION_NOTES // OPTIONAL</span>
         </div>
         <input
           type="text"
           value={userNotes}
           onChange={(e) => setUserNotes(e.target.value)}
-          placeholder="e.g. 'Refactored auth middleware and stopped at token expiration test...'"
-          className="text-input"
+          placeholder="> specify focus area, e.g. 'Investigating race condition in auth token refresh'"
+          className="cyber-input"
         />
       </div>
     </div>

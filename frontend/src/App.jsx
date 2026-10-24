@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Sparkles, 
-  RotateCw, 
-  AlertCircle, 
-  Cpu
+import {
+  Terminal,
+  RotateCw,
+  AlertCircle,
+  Cpu,
+  Layers
 } from 'lucide-react';
 
 import SessionHero from './components/SessionHero';
@@ -11,10 +12,10 @@ import ResumptionCard from './components/ResumptionCard';
 import ContextInspector from './components/ContextInspector';
 import HistoryList from './components/HistoryList';
 
-import { 
-  fetchAggregatedContext, 
-  generateHandoffNote, 
-  fetchHandoffHistory, 
+import {
+  fetchAggregatedContext,
+  generateHandoffNote,
+  fetchHandoffHistory,
   fetchHandoffDetail,
   updateHandoff,
   deleteHandoff,
@@ -59,7 +60,7 @@ export default function App() {
         setSelectedNote(latestDetail);
       }
     } catch (err) {
-      setErrorMessage(`Failed to load dashboard data: ${err.message}`);
+      setErrorMessage(`TELEMETRY ERROR: ${err.message}`);
     } finally {
       setIsLoadingContext(false);
     }
@@ -68,11 +69,11 @@ export default function App() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     setErrorMessage('');
-    setStepStage('Collecting & Scrubbing Context...');
+    setStepStage('SCRUBBING_CONTEXT_STREAM...');
 
     try {
       await new Promise(r => setTimeout(r, 600));
-      setStepStage('Inference via Local Gemma 2...');
+      setStepStage('GEMMA2_LOCAL_INFERENCE...');
 
       const newRecord = await generateHandoffNote({
         user_notes: userNotes,
@@ -81,7 +82,7 @@ export default function App() {
         include_browser: true
       });
 
-      setStepStage('Finalizing Structured Note...');
+      setStepStage('VALIDATING_SCHEMA_AST...');
       await new Promise(r => setTimeout(r, 400));
 
       setSelectedNote(newRecord);
@@ -91,7 +92,7 @@ export default function App() {
       const updatedHistory = await fetchHandoffHistory();
       setHistory(updatedHistory);
     } catch (err) {
-      setErrorMessage(`Generation failed: ${err.message}`);
+      setErrorMessage(`SYNTHESIS FAILED: ${err.message}`);
     } finally {
       setIsGenerating(false);
       setStepStage('');
@@ -104,7 +105,7 @@ export default function App() {
       setSelectedNote(detail);
       window.scrollTo({ top: 300, behavior: 'smooth' });
     } catch (err) {
-      setErrorMessage(`Failed to load note detail: ${err.message}`);
+      setErrorMessage(`LOAD FAILED: ${err.message}`);
     }
   };
 
@@ -116,12 +117,12 @@ export default function App() {
       }
       setHistory(prev => prev.map(h => h.id === id ? { ...h, is_favorite: newStatus } : h));
     } catch (err) {
-      setErrorMessage(`Failed to toggle bookmark: ${err.message}`);
+      setErrorMessage(`BOOKMARK FAILED: ${err.message}`);
     }
   };
 
   const handleDeleteNote = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this handoff note?")) return;
+    if (!window.confirm("CONFIRM_ACTION: Purge handoff log from SQLite?")) return;
     try {
       await deleteHandoff(id);
       setHistory(prev => prev.filter(h => h.id !== id));
@@ -129,72 +130,59 @@ export default function App() {
         setSelectedNote(null);
       }
     } catch (err) {
-      setErrorMessage(`Failed to delete note: ${err.message}`);
+      setErrorMessage(`PURGE FAILED: ${err.message}`);
     }
   };
 
   const filteredHistory = history.filter(item => {
     if (!searchQuery) return true;
     return item.current_task.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           item.repo_name.toLowerCase().includes(searchQuery.toLowerCase());
+      item.repo_name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   return (
     <div className="app-container">
-      {/* Top Navbar */}
-      <header className="flex justify-between items-center" style={{ paddingBottom: '1.5rem', marginBottom: '2rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+      {/* Cyber Header Navigation */}
+      <header className="flex justify-between items-center" style={{ paddingBottom: '1.25rem', marginBottom: '1.75rem', borderBottom: '1px solid var(--border-dim)' }}>
         <div className="flex items-center gap-3">
-          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.4)' }}>
-            <Sparkles size={22} style={{ color: '#FFFFFF' }} />
+          <div style={{ width: '38px', height: '38px', background: '#09131d', border: '1px solid var(--neon-cyan)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 10px rgba(0, 243, 255, 0.4)' }}>
+            <Terminal size={20} style={{ color: 'var(--neon-cyan)' }} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="title-main" style={{ fontSize: '1.25rem' }}>ReMind</h1>
-              <span className="badge badge-indigo">
-                v0.1.0
-              </span>
+              <h1 className="cyber-title" style={{ fontSize: '1.2rem', margin: 0 }}>REMIND</h1>
             </div>
-            <p className="text-xs text-muted">Tomorrow-Me Developer Handoff Engine</p>
+            <p className="text-xs text-muted" style={{ letterSpacing: '0.05em' }}>
+              TOMORROW-ME DEVELOPER HANDOFF ENGINE
+            </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {aiStatus?.available ? (
-            <span className="badge badge-emerald">
-              <Cpu size={14} />
-              Ollama: {aiStatus.selected_model}
-            </span>
-          ) : (
-            <span className="badge" style={{ background: 'rgba(244, 63, 94, 0.12)', color: '#FDA4AF', border: '1px solid rgba(244, 63, 94, 0.25)' }}>
-              <AlertCircle size={14} />
-              Ollama Offline
-            </span>
-          )}
-
           <button
             onClick={loadDashboard}
-            className="btn-icon"
-            title="Refresh Dashboard"
+            className="btn-cyber-icon"
+            title="Refresh Telemetry"
           >
-            <RotateCw size={15} className={isLoadingContext ? 'animate-spin' : ''} />
+            <RotateCw size={14} className={isLoadingContext ? 'animate-spin' : ''} />
           </button>
         </div>
       </header>
 
-      {/* Error alert */}
+      {/* Error telemetry alert */}
       {errorMessage && (
-        <div style={{ marginBottom: '1.5rem', padding: '1rem', borderRadius: '12px', background: 'rgba(76, 5, 25, 0.4)', border: '1px solid rgba(225, 29, 72, 0.4)', color: '#FECDD3', fontSize: '0.875rem' }} className="flex justify-between items-center">
+        <div style={{ marginBottom: '1.5rem', padding: '0.85rem 1rem', background: 'rgba(255, 0, 85, 0.15)', border: '1px solid var(--neon-crimson)', color: '#ffb3c6', fontSize: '0.8rem' }} className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <AlertCircle size={18} />
+            <AlertCircle size={16} />
             <span>{errorMessage}</span>
           </div>
-          <button onClick={() => setErrorMessage('')} className="btn-secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}>
-            Dismiss
+          <button onClick={() => setErrorMessage('')} className="btn-cyber-secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.65rem' }}>
+            ACKNOWLEDGE
           </button>
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Main Command & Telemetry Center */}
       <main>
         {/* Active Session Hero & Trigger */}
         <SessionHero
@@ -229,10 +217,10 @@ export default function App() {
         />
       </main>
 
-      {/* Footer */}
-      <footer className="flex justify-between items-center text-xs text-dim" style={{ marginTop: '4rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
-        <p>Tomorrow-Me Handoff • Privacy-first, local AI developer resumption.</p>
-        <p className="font-mono text-xs">Local Gemma 2 Inference • Zero Cloud Leak</p>
+      {/* Footer System Telemetry */}
+      <footer className="flex justify-between items-center text-xs text-dim" style={{ marginTop: '3.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-dim)' }}>
+        <p>// SYSTEM: PRIVACY_VERIFIED • AIRGAPPED_LOCAL_EXECUTION</p>
+        <p className="font-mono" style={{ color: 'var(--neon-cyan)' }}>LOCAL_GEMMA_2 // ZERO_CLOUD_LEAK</p>
       </footer>
     </div>
   );

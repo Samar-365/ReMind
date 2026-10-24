@@ -20,13 +20,13 @@ export default function ContextInspector({ context }) {
   const browser = context?.browser || {};
 
   return (
-    <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+    <div className="cyber-panel" style={{ padding: 0 }}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between"
         style={{
           width: '100%',
-          padding: '1.25rem 1.75rem',
+          padding: '1.25rem 1.5rem',
           background: 'transparent',
           border: 'none',
           color: 'inherit',
@@ -35,86 +35,55 @@ export default function ContextInspector({ context }) {
         }}
       >
         <div className="flex items-center gap-3">
-          <Eye size={20} style={{ color: '#818CF8' }} />
+          <Eye size={18} style={{ color: 'var(--neon-cyan)' }} />
           <div>
-            <h3 className="text-sm font-semibold" style={{ color: '#FFFFFF' }}>
-              Raw Context & Sanitization Inspector
+            <h3 className="cyber-label" style={{ fontSize: '0.85rem' }}>
+              CONTEXT_INSPECTOR // SCRUBBED_DIFFS_&_TERMINAL_LOGS
             </h3>
             <p className="text-xs text-muted">
-              Review scrubbed Git diffs, terminal session logs, and research tabs before/after AI processing
+              Inspect sanitized AST changes and bash/powershell session telemetry
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="badge badge-emerald">
-            <ShieldCheck size={14} />
-            Secrets Scrubbed
+          <span className="cyber-badge badge-emerald">
+            <ShieldCheck size={12} />
+            SCRUBBED // 100%
           </span>
-          {isOpen ? <ChevronUp size={16} style={{ color: '#94A3B8' }} /> : <ChevronDown size={16} style={{ color: '#94A3B8' }} />}
+          {isOpen ? <ChevronUp size={15} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={15} style={{ color: 'var(--text-muted)' }} />}
         </div>
       </button>
 
       {isOpen && (
-        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', padding: '1.5rem', background: 'rgba(2, 6, 23, 0.6)' }}>
+        <div style={{ borderTop: '1px solid var(--border-dim)', padding: '1.25rem', background: '#04070b' }}>
           {/* Sub Navigation */}
-          <div className="flex items-center gap-2" style={{ marginBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.75rem' }}>
+          <div className="flex items-center gap-2" style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-dim)', paddingBottom: '0.75rem' }}>
             <button
               onClick={() => setActiveTab('diff')}
-              className={activeTab === 'diff' ? 'btn-secondary' : 'btn-icon'}
-              style={{
-                color: activeTab === 'diff' ? '#FFFFFF' : '#94A3B8',
-                borderColor: activeTab === 'diff' ? '#6366F1' : 'transparent',
-                background: activeTab === 'diff' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                padding: '0.4rem 0.8rem',
-                fontSize: '0.75rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem'
-              }}
+              className={activeTab === 'diff' ? 'btn-cyber-primary' : 'btn-cyber-secondary'}
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
             >
-              <FileDiff size={14} />
-              <span>Git Diff ({git.diff_stat ? 'Active' : 'Clean'})</span>
+              <FileDiff size={13} />
+              <span>GIT_DIFF ({git.diff_stat ? 'ACTIVE' : 'CLEAN'})</span>
             </button>
 
             <button
               onClick={() => setActiveTab('terminal')}
-              style={{
-                color: activeTab === 'terminal' ? '#FFFFFF' : '#94A3B8',
-                borderColor: activeTab === 'terminal' ? '#6366F1' : 'transparent',
-                background: activeTab === 'terminal' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                padding: '0.4rem 0.8rem',
-                fontSize: '0.75rem',
-                borderRadius: '8px',
-                border: '1px solid ' + (activeTab === 'terminal' ? '#6366F1' : 'transparent'),
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem'
-              }}
+              className={activeTab === 'terminal' ? 'btn-cyber-primary' : 'btn-cyber-secondary'}
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
             >
-              <Terminal size={14} />
-              <span>Terminal ({terminal.commands?.length || 0})</span>
+              <Terminal size={13} />
+              <span>TERMINAL ({terminal.commands?.length || 0})</span>
             </button>
 
             <button
               onClick={() => setActiveTab('browser')}
-              style={{
-                color: activeTab === 'browser' ? '#FFFFFF' : '#94A3B8',
-                borderColor: activeTab === 'browser' ? '#6366F1' : 'transparent',
-                background: activeTab === 'browser' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                padding: '0.4rem 0.8rem',
-                fontSize: '0.75rem',
-                borderRadius: '8px',
-                border: '1px solid ' + (activeTab === 'browser' ? '#6366F1' : 'transparent'),
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem'
-              }}
+              className={activeTab === 'browser' ? 'btn-cyber-primary' : 'btn-cyber-secondary'}
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
             >
-              <Globe size={14} />
-              <span>Browser Tabs ({browser.tabs?.length || 0})</span>
+              <Globe size={13} />
+              <span>BROWSER_TABS ({browser.tabs?.length || 0})</span>
             </button>
           </div>
 
@@ -122,15 +91,15 @@ export default function ContextInspector({ context }) {
           {activeTab === 'diff' && (
             <div>
               <div className="text-xs font-mono text-muted" style={{ marginBottom: '0.5rem' }}>
-                {git.diff_stat || "Working tree is clean. No uncommitted diffs."}
+                {git.diff_stat ? `> ${git.diff_stat}` : "> Working tree clean. No uncommitted modifications detected."}
               </div>
               {git.diff_content ? (
-                <pre style={{ padding: '1rem', borderRadius: '8px', background: '#0F172A', border: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.75rem', color: '#CBD5E1', overflowX: 'auto', maxHeight: '18rem' }}>
+                <pre style={{ padding: '1rem', background: '#020407', border: '1px solid var(--border-dim)', fontSize: '0.75rem', color: 'var(--neon-cyan)', overflowX: 'auto', maxHeight: '18rem' }}>
                   {git.diff_content}
                 </pre>
               ) : (
-                <div style={{ padding: '2rem', textAlign: 'center', fontSize: '0.75rem', color: '#64748B', border: '1px dashed rgba(255, 255, 255, 0.1)', borderRadius: '8px' }}>
-                  No active code changes detected in this branch.
+                <div style={{ padding: '2rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-dim)', border: '1px dashed var(--border-dim)' }}>
+                  NO PENDING CODE MODIFICATIONS FOUND
                 </div>
               )}
             </div>
@@ -139,17 +108,17 @@ export default function ContextInspector({ context }) {
           {activeTab === 'terminal' && (
             <div>
               {terminal.commands && terminal.commands.length > 0 ? (
-                <div style={{ padding: '1rem', borderRadius: '8px', background: '#0F172A', border: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.75rem', color: '#CBD5E1', maxHeight: '18rem', overflowY: 'auto' }}>
+                <div style={{ padding: '1rem', background: '#020407', border: '1px solid var(--border-dim)', fontSize: '0.75rem', color: 'var(--text-main)', maxHeight: '18rem', overflowY: 'auto' }}>
                   {terminal.commands.map((cmd, i) => (
                     <div key={i} className="flex items-center gap-2" style={{ marginBottom: '0.25rem' }}>
-                      <span style={{ color: '#818CF8' }}>$</span>
-                      <span className="font-mono">{cmd}</span>
+                      <span style={{ color: 'var(--neon-cyan)' }}>&gt;</span>
+                      <code>{cmd}</code>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ padding: '2rem', textAlign: 'center', fontSize: '0.75rem', color: '#64748B', border: '1px dashed rgba(255, 255, 255, 0.1)', borderRadius: '8px' }}>
-                  No terminal command history captured.
+                <div style={{ padding: '2rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-dim)', border: '1px dashed var(--border-dim)' }}>
+                  NO TERMINAL SESSION LOGS DETECTED
                 </div>
               )}
             </div>
@@ -160,15 +129,15 @@ export default function ContextInspector({ context }) {
               {browser.tabs && browser.tabs.length > 0 ? (
                 <div className="space-y-2" style={{ maxHeight: '18rem', overflowY: 'auto' }}>
                   {browser.tabs.map((tab, i) => (
-                    <div key={i} style={{ padding: '0.75rem', borderRadius: '8px', background: '#0F172A', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                      <p className="text-xs font-semibold" style={{ color: '#F1F5F9' }}>{tab.title}</p>
-                      <p className="font-mono text-xs" style={{ color: '#818CF8' }}>{tab.url}</p>
+                    <div key={i} style={{ padding: '0.6rem 0.8rem', background: '#020407', border: '1px solid var(--border-dim)' }}>
+                      <p className="text-xs" style={{ color: 'var(--text-main)' }}>{tab.title}</p>
+                      <p className="text-xs" style={{ color: 'var(--neon-cyan)' }}>{tab.url}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ padding: '2rem', textAlign: 'center', fontSize: '0.75rem', color: '#64748B', border: '1px dashed rgba(255, 255, 255, 0.1)', borderRadius: '8px' }}>
-                  No browser research tabs submitted. Submit tabs via POST /api/context/browser/tabs.
+                <div style={{ padding: '2rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-dim)', border: '1px dashed var(--border-dim)' }}>
+                  NO BROWSER RESEARCH TABS LOGGED
                 </div>
               )}
             </div>

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { 
-  CheckCircle, 
+  CheckSquare, 
+  Square,
   AlertTriangle, 
-  ArrowRightCircle, 
+  Terminal, 
   FileCode, 
   Bookmark, 
   Copy, 
   Check, 
   Clock, 
-  Sparkles 
+  Zap,
+  Target
 } from 'lucide-react';
 
 export default function ResumptionCard({ noteRecord, onToggleFavorite }) {
@@ -50,25 +52,25 @@ ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  E
   };
 
   return (
-    <div className="glass-panel" style={{ borderColor: 'rgba(99, 102, 241, 0.4)', boxShadow: '0 0 30px rgba(99, 102, 241, 0.15)' }}>
-      {/* Header Bar */}
-      <div className="flex justify-between items-start gap-4" style={{ paddingBottom: '1.25rem', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+    <div className="cyber-panel" style={{ borderLeftColor: 'var(--neon-emerald)', borderColor: 'rgba(5, 255, 161, 0.3)' }}>
+      {/* Top Protocol Header */}
+      <div className="flex justify-between items-start gap-4" style={{ paddingBottom: '1.25rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-dim)' }}>
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase" style={{ color: '#818CF8', marginBottom: '0.25rem' }}>
-            <Sparkles size={16} />
-            <span>Tomorrow's Resumption Brief</span>
+          <div className="flex items-center gap-2 cyber-label" style={{ color: 'var(--neon-emerald)', marginBottom: '0.35rem' }}>
+            <Zap size={14} />
+            <span>MISSION_BRIEF // RESUMPTION_PROTOCOL</span>
           </div>
-          <h2 className="section-title" style={{ fontSize: '1.35rem' }}>
+          <h2 className="cyber-title" style={{ fontSize: '1.35rem', color: '#fff', textShadow: '0 0 10px rgba(5, 255, 161, 0.4)' }}>
             {note.current_task}
           </h2>
           <div className="flex items-center gap-3 text-xs text-muted" style={{ marginTop: '0.5rem' }}>
             <span className="flex items-center gap-1">
-              <Clock size={13} />
-              {new Date(created_at).toLocaleString()}
+              <Clock size={12} />
+              TIMESTAMP: {new Date(created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({new Date(created_at).toLocaleDateString()})
             </span>
-            <span>•</span>
-            <span className="font-mono badge-slate" style={{ padding: '0.15rem 0.5rem', borderRadius: '4px', color: '#A5B4FC' }}>
-              {model_used}
+            <span>//</span>
+            <span style={{ color: 'var(--neon-cyan)' }}>
+              MODEL: {model_used}
             </span>
           </div>
         </div>
@@ -76,18 +78,18 @@ ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  E
         <div className="flex items-center gap-2">
           <button
             onClick={copyToClipboard}
-            className="btn-secondary"
-            title="Copy as Markdown"
+            className="btn-cyber-secondary"
+            title="Export Markdown"
           >
-            {copied ? <Check size={14} style={{ color: '#34D399' }} /> : <Copy size={14} />}
-            <span>{copied ? "Copied Markdown" : "Export Markdown"}</span>
+            {copied ? <Check size={13} style={{ color: 'var(--neon-emerald)' }} /> : <Copy size={13} />}
+            <span>{copied ? "COPIED_RAW" : "EXPORT_MD"}</span>
           </button>
 
           {onToggleFavorite && (
             <button
               onClick={() => onToggleFavorite(noteRecord.id, !is_favorite)}
-              className="btn-icon"
-              style={{ color: is_favorite ? '#FBBF24' : '#94A3B8' }}
+              className="btn-cyber-icon"
+              style={{ color: is_favorite ? 'var(--neon-amber)' : 'var(--text-dim)' }}
             >
               <Bookmark size={15} fill={is_favorite ? "currentColor" : "none"} />
             </button>
@@ -95,88 +97,94 @@ ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  E
         </div>
       </div>
 
-      {/* Grid of Sections */}
+      {/* Telemetry Sections Grid */}
       <div className="grid grid-cols-1 lg-grid-cols-12 gap-6">
         
-        {/* Left Column: Priority Next Steps & Blockers */}
+        {/* Left Column: Priority Action Sequence & Anomalies */}
         <div className="lg-col-span-7 space-y-6">
           
-          {/* Section: Priority Next Steps */}
-          <div className="sub-panel" style={{ borderColor: 'rgba(99, 102, 241, 0.2)' }}>
-            <h3 className="text-xs font-semibold uppercase flex items-center gap-2" style={{ color: '#A5B4FC', marginBottom: '1rem' }}>
-              <ArrowRightCircle size={15} style={{ color: '#818CF8' }} />
-              <span>Priority Resumption Steps</span>
+          {/* Action Sequence */}
+          <div className="cyber-subpanel" style={{ borderLeft: '2px solid var(--neon-cyan)' }}>
+            <h3 className="cyber-label flex items-center gap-2" style={{ marginBottom: '1rem', color: 'var(--neon-cyan)' }}>
+              <Target size={14} />
+              <span>EXECUTION_CHECKLIST // PRIORITY_STEPS</span>
             </h3>
             <div className="space-y-2">
-              {(note.next_steps || []).map((step, idx) => (
-                <label 
-                  key={idx}
-                  className="flex items-start gap-3 p-3 rounded-lg cursor-pointer"
-                  style={{
-                    background: checkedSteps[idx] ? 'rgba(6, 78, 59, 0.2)' : 'rgba(30, 41, 59, 0.5)',
-                    border: '1px solid ' + (checkedSteps[idx] ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.05)'),
-                    padding: '0.75rem',
-                    borderRadius: '8px',
-                    textDecoration: checkedSteps[idx] ? 'line-through' : 'none',
-                    color: checkedSteps[idx] ? '#64748B' : '#F1F5F9'
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!checkedSteps[idx]}
-                    onChange={() => toggleCheck(idx)}
-                    style={{ marginTop: '0.2rem', cursor: 'pointer' }}
-                  />
-                  <span className="text-sm" style={{ lineHeight: '1.4' }}>{step}</span>
-                </label>
-              ))}
+              {(note.next_steps || []).map((step, idx) => {
+                const isDone = !!checkedSteps[idx];
+                return (
+                  <div 
+                    key={idx}
+                    onClick={() => toggleCheck(idx)}
+                    className="flex items-start gap-3"
+                    style={{
+                      background: isDone ? 'rgba(5, 255, 161, 0.05)' : '#04070b',
+                      border: '1px solid ' + (isDone ? 'rgba(5, 255, 161, 0.3)' : 'var(--border-dim)'),
+                      padding: '0.75rem',
+                      borderRadius: '2px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ marginTop: '0.15rem', color: isDone ? 'var(--neon-emerald)' : 'var(--text-dim)' }}>
+                      {isDone ? <CheckSquare size={16} /> : <Square size={16} />}
+                    </div>
+                    <span style={{ 
+                      fontSize: '0.85rem', 
+                      color: isDone ? 'var(--text-dim)' : 'var(--text-main)',
+                      textDecoration: isDone ? 'line-through' : 'none'
+                    }}>
+                      {step}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Section: Blockers & Hypotheses */}
-          <div className="sub-panel" style={{ borderColor: 'rgba(244, 63, 94, 0.2)' }}>
-            <h3 className="text-xs font-semibold uppercase flex items-center gap-2" style={{ color: '#FDA4AF', marginBottom: '1rem' }}>
-              <AlertTriangle size={15} style={{ color: '#FB7185' }} />
-              <span>Blockers & Problem Hypotheses</span>
+          {/* Blockers & Hypotheses */}
+          <div className="cyber-subpanel" style={{ borderLeft: '2px solid var(--neon-crimson)' }}>
+            <h3 className="cyber-label flex items-center gap-2" style={{ marginBottom: '1rem', color: 'var(--neon-crimson)' }}>
+              <AlertTriangle size={14} />
+              <span>ANOMALIES // BLOCKERS_&_HYPOTHESES</span>
             </h3>
 
-            {note.blockers && note.blockers.length > 0 ? (
+            {note.blockers && note.blockers.length > 0 && (
               <div className="space-y-2" style={{ marginBottom: '1rem' }}>
                 {note.blockers.map((b, i) => (
-                  <div key={i} className="text-xs" style={{ background: 'rgba(76, 5, 25, 0.3)', padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(225, 29, 72, 0.3)', color: '#FECDD3' }}>
-                    {b}
+                  <div key={i} className="text-xs" style={{ background: 'rgba(255, 0, 85, 0.1)', border: '1px solid rgba(255, 0, 85, 0.4)', padding: '0.6rem 0.8rem', color: '#ff9ebb' }}>
+                    [BLOCKER]: {b}
                   </div>
                 ))}
               </div>
-            ) : null}
+            )}
 
             {note.likely_problem_areas && note.likely_problem_areas.length > 0 ? (
               <div className="space-y-3">
                 {note.likely_problem_areas.map((prob, i) => (
-                  <div key={i} style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    <p className="text-sm font-medium" style={{ color: '#F1F5F9', marginBottom: '0.35rem' }}>
-                      💡 {prob.hypothesis}
+                  <div key={i} style={{ background: '#04070b', padding: '0.75rem', border: '1px solid var(--border-dim)' }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginBottom: '0.35rem' }}>
+                      &gt; HYPOTHESIS: {prob.hypothesis}
                     </p>
-                    <div className="text-xs font-mono" style={{ background: '#020617', padding: '0.5rem', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.05)', color: '#94A3B8', wordBreak: 'break-all' }}>
-                      <span style={{ color: '#818CF8' }}>Evidence: </span>{prob.cited_evidence}
+                    <div style={{ background: '#020407', padding: '0.5rem', border: '1px solid #132235', fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+                      <span style={{ color: 'var(--neon-cyan)' }}>CITED_EVIDENCE: </span>{prob.cited_evidence}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-dim" style={{ fontStyle: 'italic' }}>No critical roadblocks detected during this session.</p>
+              <p className="text-xs text-dim">&gt; NO CRITICAL IMPEDIMENTS RECORDED IN CURRENT SESSION</p>
             )}
           </div>
         </div>
 
-        {/* Right Column: Progress, Current State, Files & Commands */}
+        {/* Right Column: State Telemetry, Files & Commands */}
         <div className="lg-col-span-5 space-y-6">
 
-          {/* Current State & Progress */}
-          <div className="sub-panel">
-            <h3 className="text-xs font-semibold uppercase flex items-center gap-2 text-muted" style={{ marginBottom: '0.75rem' }}>
-              <CheckCircle size={15} style={{ color: '#34D399' }} />
-              <span>Current Implementation State</span>
+          {/* Implementation State */}
+          <div className="cyber-subpanel">
+            <h3 className="cyber-label flex items-center gap-2" style={{ marginBottom: '0.75rem', color: 'var(--neon-emerald)' }}>
+              <span>SYSTEM_STATE // STATUS_REPORT</span>
             </h3>
             <p className="text-sm text-muted" style={{ lineHeight: '1.5', marginBottom: '1rem' }}>
               {note.current_state}
@@ -184,11 +192,11 @@ ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  E
 
             {note.progress && note.progress.length > 0 && (
               <div>
-                <h4 className="text-xs font-semibold uppercase text-dim" style={{ marginBottom: '0.5rem' }}>Accomplished:</h4>
+                <h4 className="cyber-label text-xs" style={{ color: 'var(--text-dim)', marginBottom: '0.5rem' }}>LOGGED_CHANGES:</h4>
                 <ul className="space-y-1" style={{ listStyle: 'none' }}>
                   {note.progress.map((p, i) => (
                     <li key={i} className="text-xs text-muted flex items-start gap-2">
-                      <span style={{ color: '#34D399' }}>•</span>
+                      <span style={{ color: 'var(--neon-emerald)' }}>&gt;</span>
                       <span>{p}</span>
                     </li>
                   ))}
@@ -197,19 +205,19 @@ ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  E
             )}
           </div>
 
-          {/* Relevant Files & Resume Commands */}
-          <div className="sub-panel">
-            <h3 className="text-xs font-semibold uppercase flex items-center gap-2 text-muted" style={{ marginBottom: '0.75rem' }}>
-              <FileCode size={15} style={{ color: '#22D3EE' }} />
-              <span>Resume Context</span>
+          {/* Active Files & Execution Commands */}
+          <div className="cyber-subpanel">
+            <h3 className="cyber-label flex items-center gap-2" style={{ marginBottom: '0.75rem', color: 'var(--neon-cyan)' }}>
+              <FileCode size={14} />
+              <span>ACTIVE_RESOURCES // CONTEXT_TRACES</span>
             </h3>
 
             {note.relevant_files && note.relevant_files.length > 0 && (
               <div style={{ marginBottom: '1rem' }}>
-                <span className="text-xs text-dim block" style={{ marginBottom: '0.4rem' }}>Active Files:</span>
+                <span className="text-xs text-dim block" style={{ marginBottom: '0.4rem' }}>RELEVANT_FILES:</span>
                 <div className="flex flex-wrap gap-1">
                   {note.relevant_files.map((file, i) => (
-                    <span key={i} className="font-mono text-xs" style={{ background: '#1E293B', padding: '0.2rem 0.5rem', borderRadius: '4px', color: '#67E8F9', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <span key={i} className="text-xs" style={{ background: '#04070b', padding: '0.2rem 0.5rem', border: '1px solid var(--border-dim)', color: 'var(--neon-cyan)' }}>
                       {file}
                     </span>
                   ))}
@@ -219,18 +227,18 @@ ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  E
 
             {note.relevant_commands && note.relevant_commands.length > 0 && (
               <div>
-                <span className="text-xs text-dim block" style={{ marginBottom: '0.4rem' }}>Resume Commands:</span>
+                <span className="text-xs text-dim block" style={{ marginBottom: '0.4rem' }}>RESUME_CLI_COMMANDS:</span>
                 <div className="space-y-1">
                   {note.relevant_commands.map((cmd, i) => (
-                    <div key={i} className="flex items-center justify-between font-mono text-xs" style={{ background: '#020617', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.05)', color: '#A5B4FC' }}>
-                      <code>{cmd}</code>
+                    <div key={i} className="flex items-center justify-between text-xs" style={{ background: '#04070b', padding: '0.4rem 0.6rem', border: '1px solid var(--border-dim)', color: 'var(--neon-emerald)' }}>
+                      <code>$ {cmd}</code>
                       <button 
                         onClick={() => navigator.clipboard.writeText(cmd)}
-                        className="btn-icon"
-                        style={{ padding: '0.25rem', border: 'none', background: 'transparent' }}
+                        className="btn-cyber-icon"
+                        style={{ padding: '0.2rem', border: 'none', background: 'transparent' }}
                         title="Copy command"
                       >
-                        <Copy size={13} />
+                        <Copy size={12} />
                       </button>
                     </div>
                   ))}
