@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import { 
-  Target, 
   CheckCircle, 
   AlertTriangle, 
   ArrowRightCircle, 
   FileCode, 
-  Terminal, 
   Bookmark, 
   Copy, 
   Check, 
-  Share2, 
   Clock, 
-  Sparkles,
-  ExternalLink
+  Sparkles 
 } from 'lucide-react';
 
 export default function ResumptionCard({ noteRecord, onToggleFavorite }) {
@@ -23,7 +19,7 @@ export default function ResumptionCard({ noteRecord, onToggleFavorite }) {
     return null;
   }
 
-  const { note, created_at, model_used, is_favorite, repo_name, branch } = noteRecord;
+  const { note, created_at, model_used, is_favorite, repo_name } = noteRecord;
 
   const toggleCheck = (idx) => {
     setCheckedSteps(prev => ({ ...prev, [idx]: !prev[idx] }));
@@ -33,17 +29,17 @@ export default function ResumptionCard({ noteRecord, onToggleFavorite }) {
     const md = `
 # Tomorrow-Me Handoff: ${repo_name} (${new Date(created_at).toLocaleDateString()})
 
-## 🎯 Current Task
+## Current Task
 ${note.current_task}
 
-## 🚀 Immediate Next Steps
+## Immediate Next Steps
 ${(note.next_steps || []).map(s => `- [ ] ${s}`).join('\n')}
 
-## 🚧 Blockers & Problem Hypotheses
+## Blockers & Problem Hypotheses
 ${(note.blockers || []).map(b => `- ${b}`).join('\n')}
 ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  Evidence: ${p.cited_evidence}`).join('\n')}
 
-## 📁 Key Files & Commands
+## Key Files & Commands
 - Files: ${(note.relevant_files || []).join(', ')}
 - Commands: ${(note.relevant_commands || []).join(', ')}
 `.trim();
@@ -54,24 +50,24 @@ ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  E
   };
 
   return (
-    <div className="glass-panel p-6 sm:p-8 mb-8 border-indigo-500/30 glow-primary">
+    <div className="glass-panel" style={{ borderColor: 'rgba(99, 102, 241, 0.4)', boxShadow: '0 0 30px rgba(99, 102, 241, 0.15)' }}>
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-slate-800 gap-4">
+      <div className="flex justify-between items-start gap-4" style={{ paddingBottom: '1.25rem', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-1">
-            <Sparkles className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase" style={{ color: '#818CF8', marginBottom: '0.25rem' }}>
+            <Sparkles size={16} />
             <span>Tomorrow's Resumption Brief</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+          <h2 className="section-title" style={{ fontSize: '1.35rem' }}>
             {note.current_task}
           </h2>
-          <div className="flex items-center gap-3 text-xs text-slate-400 mt-2">
+          <div className="flex items-center gap-3 text-xs text-muted" style={{ marginTop: '0.5rem' }}>
             <span className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
+              <Clock size={13} />
               {new Date(created_at).toLocaleString()}
             </span>
             <span>•</span>
-            <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-indigo-300">
+            <span className="font-mono badge-slate" style={{ padding: '0.15rem 0.5rem', borderRadius: '4px', color: '#A5B4FC' }}>
               {model_used}
             </span>
           </div>
@@ -80,73 +76,74 @@ ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  E
         <div className="flex items-center gap-2">
           <button
             onClick={copyToClipboard}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs font-medium text-slate-300 transition-colors border border-slate-700"
+            className="btn-secondary"
             title="Copy as Markdown"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? <Check size={14} style={{ color: '#34D399' }} /> : <Copy size={14} />}
             <span>{copied ? "Copied Markdown" : "Export Markdown"}</span>
           </button>
 
           {onToggleFavorite && (
             <button
               onClick={() => onToggleFavorite(noteRecord.id, !is_favorite)}
-              className={`p-2 rounded-lg border transition-colors ${
-                is_favorite 
-                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
-                  : 'bg-slate-800/80 text-slate-400 hover:text-slate-200 border-slate-700'
-              }`}
+              className="btn-icon"
+              style={{ color: is_favorite ? '#FBBF24' : '#94A3B8' }}
             >
-              <Bookmark className="w-4 h-4 fill-current" />
+              <Bookmark size={15} fill={is_favorite ? "currentColor" : "none"} />
             </button>
           )}
         </div>
       </div>
 
       {/* Grid of Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg-grid-cols-12 gap-6">
         
-        {/* Left Column: Next Steps & Blockers (Primary focus for resumption) */}
-        <div className="lg:col-span-7 space-y-6">
+        {/* Left Column: Priority Next Steps & Blockers */}
+        <div className="lg-col-span-7 space-y-6">
           
-          {/* Section: Immediate Next Steps */}
-          <div className="bg-slate-900/60 p-5 rounded-xl border border-indigo-500/20">
-            <h3 className="text-sm font-semibold text-indigo-300 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <ArrowRightCircle className="w-4 h-4 text-indigo-400" />
+          {/* Section: Priority Next Steps */}
+          <div className="sub-panel" style={{ borderColor: 'rgba(99, 102, 241, 0.2)' }}>
+            <h3 className="text-xs font-semibold uppercase flex items-center gap-2" style={{ color: '#A5B4FC', marginBottom: '1rem' }}>
+              <ArrowRightCircle size={15} style={{ color: '#818CF8' }} />
               <span>Priority Resumption Steps</span>
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {(note.next_steps || []).map((step, idx) => (
                 <label 
                   key={idx}
-                  className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer ${
-                    checkedSteps[idx] 
-                      ? 'bg-emerald-950/20 border-emerald-900/40 text-slate-500 line-through' 
-                      : 'bg-slate-800/50 hover:bg-slate-800 border-slate-800 text-slate-200'
-                  }`}
+                  className="flex items-start gap-3 p-3 rounded-lg cursor-pointer"
+                  style={{
+                    background: checkedSteps[idx] ? 'rgba(6, 78, 59, 0.2)' : 'rgba(30, 41, 59, 0.5)',
+                    border: '1px solid ' + (checkedSteps[idx] ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.05)'),
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    textDecoration: checkedSteps[idx] ? 'line-through' : 'none',
+                    color: checkedSteps[idx] ? '#64748B' : '#F1F5F9'
+                  }}
                 >
                   <input
                     type="checkbox"
                     checked={!!checkedSteps[idx]}
                     onChange={() => toggleCheck(idx)}
-                    className="mt-1 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-900"
+                    style={{ marginTop: '0.2rem', cursor: 'pointer' }}
                   />
-                  <span className="text-sm leading-relaxed">{step}</span>
+                  <span className="text-sm" style={{ lineHeight: '1.4' }}>{step}</span>
                 </label>
               ))}
             </div>
           </div>
 
           {/* Section: Blockers & Hypotheses */}
-          <div className="bg-slate-900/60 p-5 rounded-xl border border-rose-500/20">
-            <h3 className="text-sm font-semibold text-rose-300 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-400" />
+          <div className="sub-panel" style={{ borderColor: 'rgba(244, 63, 94, 0.2)' }}>
+            <h3 className="text-xs font-semibold uppercase flex items-center gap-2" style={{ color: '#FDA4AF', marginBottom: '1rem' }}>
+              <AlertTriangle size={15} style={{ color: '#FB7185' }} />
               <span>Blockers & Problem Hypotheses</span>
             </h3>
 
             {note.blockers && note.blockers.length > 0 ? (
-              <div className="space-y-2 mb-4">
+              <div className="space-y-2" style={{ marginBottom: '1rem' }}>
                 {note.blockers.map((b, i) => (
-                  <div key={i} className="text-xs text-rose-200 bg-rose-950/30 p-2.5 rounded-lg border border-rose-900/40">
+                  <div key={i} className="text-xs" style={{ background: 'rgba(76, 5, 25, 0.3)', padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(225, 29, 72, 0.3)', color: '#FECDD3' }}>
                     {b}
                   </div>
                 ))}
@@ -156,42 +153,42 @@ ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  E
             {note.likely_problem_areas && note.likely_problem_areas.length > 0 ? (
               <div className="space-y-3">
                 {note.likely_problem_areas.map((prob, i) => (
-                  <div key={i} className="p-3 rounded-lg bg-slate-800/60 border border-slate-800">
-                    <p className="text-sm font-medium text-slate-200 mb-1">
+                  <div key={i} style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <p className="text-sm font-medium" style={{ color: '#F1F5F9', marginBottom: '0.35rem' }}>
                       💡 {prob.hypothesis}
                     </p>
-                    <div className="text-xs font-mono text-slate-400 bg-slate-950/60 p-2 rounded border border-slate-900 break-all">
-                      <span className="text-indigo-400">Evidence: </span>{prob.cited_evidence}
+                    <div className="text-xs font-mono" style={{ background: '#020617', padding: '0.5rem', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.05)', color: '#94A3B8', wordBreak: 'break-all' }}>
+                      <span style={{ color: '#818CF8' }}>Evidence: </span>{prob.cited_evidence}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 italic">No critical roadblocks detected during this session.</p>
+              <p className="text-xs text-dim" style={{ fontStyle: 'italic' }}>No critical roadblocks detected during this session.</p>
             )}
           </div>
         </div>
 
         {/* Right Column: Progress, Current State, Files & Commands */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg-col-span-5 space-y-6">
 
           {/* Current State & Progress */}
-          <div className="bg-slate-900/60 p-5 rounded-xl border border-slate-800">
-            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-emerald-400" />
+          <div className="sub-panel">
+            <h3 className="text-xs font-semibold uppercase flex items-center gap-2 text-muted" style={{ marginBottom: '0.75rem' }}>
+              <CheckCircle size={15} style={{ color: '#34D399' }} />
               <span>Current Implementation State</span>
             </h3>
-            <p className="text-sm text-slate-300 leading-relaxed mb-4">
+            <p className="text-sm text-muted" style={{ lineHeight: '1.5', marginBottom: '1rem' }}>
               {note.current_state}
             </p>
 
             {note.progress && note.progress.length > 0 && (
               <div>
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Accomplished:</h4>
-                <ul className="space-y-1.5">
+                <h4 className="text-xs font-semibold uppercase text-dim" style={{ marginBottom: '0.5rem' }}>Accomplished:</h4>
+                <ul className="space-y-1" style={{ listStyle: 'none' }}>
                   {note.progress.map((p, i) => (
-                    <li key={i} className="text-xs text-slate-400 flex items-start gap-2">
-                      <span className="text-emerald-400 mt-0.5">•</span>
+                    <li key={i} className="text-xs text-muted flex items-start gap-2">
+                      <span style={{ color: '#34D399' }}>•</span>
                       <span>{p}</span>
                     </li>
                   ))}
@@ -201,18 +198,18 @@ ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  E
           </div>
 
           {/* Relevant Files & Resume Commands */}
-          <div className="bg-slate-900/60 p-5 rounded-xl border border-slate-800">
-            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <FileCode className="w-4 h-4 text-cyan-400" />
+          <div className="sub-panel">
+            <h3 className="text-xs font-semibold uppercase flex items-center gap-2 text-muted" style={{ marginBottom: '0.75rem' }}>
+              <FileCode size={15} style={{ color: '#22D3EE' }} />
               <span>Resume Context</span>
             </h3>
 
             {note.relevant_files && note.relevant_files.length > 0 && (
-              <div className="mb-4">
-                <span className="text-xs font-medium text-slate-400 block mb-1.5">Active Files:</span>
-                <div className="flex flex-wrap gap-1.5">
+              <div style={{ marginBottom: '1rem' }}>
+                <span className="text-xs text-dim block" style={{ marginBottom: '0.4rem' }}>Active Files:</span>
+                <div className="flex flex-wrap gap-1">
                   {note.relevant_files.map((file, i) => (
-                    <span key={i} className="px-2 py-1 rounded bg-slate-800 font-mono text-xs text-cyan-300 border border-slate-700/60">
+                    <span key={i} className="font-mono text-xs" style={{ background: '#1E293B', padding: '0.2rem 0.5rem', borderRadius: '4px', color: '#67E8F9', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                       {file}
                     </span>
                   ))}
@@ -222,17 +219,18 @@ ${(note.likely_problem_areas || []).map(p => `- Hypothesis: ${p.hypothesis}\n  E
 
             {note.relevant_commands && note.relevant_commands.length > 0 && (
               <div>
-                <span className="text-xs font-medium text-slate-400 block mb-1.5">Resume Commands:</span>
-                <div className="space-y-1.5">
+                <span className="text-xs text-dim block" style={{ marginBottom: '0.4rem' }}>Resume Commands:</span>
+                <div className="space-y-1">
                   {note.relevant_commands.map((cmd, i) => (
-                    <div key={i} className="px-2.5 py-1.5 rounded bg-slate-950 font-mono text-xs text-indigo-300 border border-slate-800 flex items-center justify-between">
+                    <div key={i} className="flex items-center justify-between font-mono text-xs" style={{ background: '#020617', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.05)', color: '#A5B4FC' }}>
                       <code>{cmd}</code>
                       <button 
                         onClick={() => navigator.clipboard.writeText(cmd)}
-                        className="text-slate-500 hover:text-slate-300 ml-2"
+                        className="btn-icon"
+                        style={{ padding: '0.25rem', border: 'none', background: 'transparent' }}
                         title="Copy command"
                       >
-                        <Copy className="w-3 h-3" />
+                        <Copy size={13} />
                       </button>
                     </div>
                   ))}

@@ -3,8 +3,6 @@ import {
   Sparkles, 
   RotateCw, 
   AlertCircle, 
-  CheckCircle2, 
-  Layers, 
   Cpu
 } from 'lucide-react';
 
@@ -142,55 +140,55 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen text-slate-100 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div className="app-container">
       {/* Top Navbar */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-8 border-b border-slate-800/80 gap-4">
+      <header className="flex justify-between items-center" style={{ paddingBottom: '1.5rem', marginBottom: '2rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center glow-primary shadow-lg">
-            <Sparkles className="w-5 h-5 text-white" />
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.4)' }}>
+            <Sparkles size={22} style={{ color: '#FFFFFF' }} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-extrabold tracking-tight text-white">ReMind</h1>
-              <span className="text-[11px] font-semibold bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20">
+              <h1 className="title-main" style={{ fontSize: '1.25rem' }}>ReMind</h1>
+              <span className="badge badge-indigo">
                 v0.1.0
               </span>
             </div>
-            <p className="text-xs text-slate-400">Tomorrow-Me Developer Handoff Engine</p>
+            <p className="text-xs text-muted">Tomorrow-Me Developer Handoff Engine</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           {aiStatus?.available ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
-              <Cpu className="w-3.5 h-3.5" />
+            <span className="badge badge-emerald">
+              <Cpu size={14} />
               Ollama: {aiStatus.selected_model}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-950/60 text-rose-400 border border-rose-800/60">
-              <AlertCircle className="w-3.5 h-3.5" />
+            <span className="badge" style={{ background: 'rgba(244, 63, 94, 0.12)', color: '#FDA4AF', border: '1px solid rgba(244, 63, 94, 0.25)' }}>
+              <AlertCircle size={14} />
               Ollama Offline
             </span>
           )}
 
           <button
             onClick={loadDashboard}
-            className="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="btn-icon"
             title="Refresh Dashboard"
           >
-            <RotateCw className={`w-4 h-4 ${isLoadingContext ? 'animate-spin' : ''}`} />
+            <RotateCw size={15} className={isLoadingContext ? 'animate-spin' : ''} />
           </button>
         </div>
       </header>
 
       {/* Error alert */}
       {errorMessage && (
-        <div className="mb-6 p-4 rounded-xl bg-rose-950/40 border border-rose-900/60 text-rose-300 text-sm flex items-center justify-between">
+        <div style={{ marginBottom: '1.5rem', padding: '1rem', borderRadius: '12px', background: 'rgba(76, 5, 25, 0.4)', border: '1px solid rgba(225, 29, 72, 0.4)', color: '#FECDD3', fontSize: '0.875rem' }} className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 shrink-0" />
+            <AlertCircle size={18} />
             <span>{errorMessage}</span>
           </div>
-          <button onClick={() => setErrorMessage('')} className="text-xs underline ml-4">
+          <button onClick={() => setErrorMessage('')} className="btn-secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}>
             Dismiss
           </button>
         </div>
@@ -232,9 +230,9 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-16 pt-6 border-t border-slate-900 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="flex justify-between items-center text-xs text-dim" style={{ marginTop: '4rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
         <p>Tomorrow-Me Handoff • Privacy-first, local AI developer resumption.</p>
-        <p className="font-mono text-[11px]">Local Gemma 2 Inference • Zero Cloud Leak</p>
+        <p className="font-mono text-xs">Local Gemma 2 Inference • Zero Cloud Leak</p>
       </footer>
     </div>
   );
