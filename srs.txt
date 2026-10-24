@@ -1,0 +1,491 @@
+# Software Requirements Specification (SRS)
+## Tomorrow-Me Handoff
+**Version:** 1.0  
+**Project Type:** AI-powered developer productivity tool  
+**Theme:** Hacktoberfest — Slow and Steady
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+Tomorrow-Me Handoff is a privacy-focused AI application designed to help developers resume their work without spending time remembering what they were doing in their previous coding session.
+
+At the end of a work session, the application collects relevant development context, including Git diffs, terminal history, and selected browser-tab information. An open-weight AI model analyzes this context and generates a structured handoff note explaining the current task, completed work, unresolved problems, potential causes of bugs, and recommended next steps.
+
+The system aims to reduce the cognitive effort associated with switching tasks, taking breaks, or returning to a project after an extended period.
+
+### 1.2 Scope
+
+The application will provide:
+
+- Automatic collection of relevant development context.
+- Git diff analysis and change summaries.
+- Terminal history analysis.
+- Browser-tab context collection with user permission.
+- Local AI-powered handoff note generation using Gemma.
+- Identification of unfinished tasks, blockers, and possible bug locations.
+- Persistent storage and retrieval of previous handoff notes.
+- Scheduled end-of-day handoff generation.
+- An optional hosted dashboard and agent service using Render.
+- Execution monitoring and error tracking.
+
+The core application will prioritize local processing and privacy. Any cloud integration must be optional and must not transmit private development context without explicit user consent.
+
+### 1.3 Intended Users
+
+- Software developers working on personal or professional projects.
+- Students working on programming assignments and projects.
+- Open-source contributors who frequently switch between repositories.
+- Developers who take breaks and need to resume unfinished tasks.
+- Teams that want consistent, structured development handoff notes.
+
+### 1.4 Definitions and Abbreviations
+
+| Term | Description |
+|---|---|
+| SRS | Software Requirements Specification |
+| AI | Artificial Intelligence |
+| LLM | Large Language Model |
+| Git diff | A representation of changes between versions of files |
+| Handoff note | A summary of current work and recommended next steps |
+| Open-weight model | A model whose weights are available for use under its applicable license |
+| Local inference | Running model inference on the user's own device |
+| Render | A cloud platform for deploying web services and background jobs |
+
+---
+
+## 2. Overall Description
+
+### 2.1 Product Perspective
+
+Tomorrow-Me Handoff will function as a developer productivity assistant that operates alongside existing development tools rather than replacing them.
+
+The application will collect context from supported development environments, process it through a local AI model, and produce a persistent handoff note. A dashboard will allow users to review previous notes, inspect generated recommendations, and configure automation preferences.
+
+The proposed system consists of a local context collector, a processing and orchestration layer, a Gemma inference runtime, a local storage layer, and an optional Render-hosted component.
+
+### 2.2 Product Objectives
+
+1. Reduce the time required to resume interrupted coding tasks.
+2. Preserve important development context between sessions.
+3. Help developers identify unresolved bugs and unfinished work.
+4. Keep source code and development history private by default.
+5. Automate handoff generation with minimal user interaction.
+6. Provide an extensible architecture that supports future models and integrations.
+
+### 2.3 Operating Environment
+
+**Client environment**
+- Windows 10/11, with Windows 11 as the primary development target.
+- Linux and macOS support may be added later.
+- Git repositories and a supported terminal.
+- A compatible local model runtime, such as Ollama.
+- A supported browser for optional tab-context collection.
+
+**Application technologies**
+- Python for context collection and backend processing.
+- FastAPI for local APIs.
+- React with Vite for the dashboard.
+- Gemma through a compatible local inference runtime.
+- SQLite for local persistence.
+- Render for optional cloud services and scheduled workflows.
+- Sentry for eligible execution monitoring.
+- Mastra may be evaluated for orchestration if it fits the selected implementation stack.
+
+### 2.4 Constraints
+
+- Model inference performance depends on the selected Gemma variant and available hardware.
+- Browser context collection requires explicit permissions and browser-specific integration.
+- Terminal history differs across shells and operating systems.
+- Git diffs may contain credentials, secrets, or confidential code.
+- Cloud deployment must not undermine the local-first privacy requirement.
+- The project must remain usable when optional cloud integrations are unavailable.
+
+---
+
+## 3. Functional Requirements
+
+### FR-01: Development Context Collection
+
+The system shall collect relevant development context from supported sources.
+
+Inputs may include:
+- Git repository status.
+- Git diffs and changed-file lists.
+- Recent terminal commands from supported shell history files.
+- Selected browser-tab titles, URLs, or user-approved page content.
+- User-provided notes and task descriptions.
+
+The system shall allow users to enable or disable individual context sources.
+
+### FR-02: Git Repository Analysis
+
+The system shall identify the active repository and collect relevant Git information.
+
+It shall:
+- Identify changed, staged, and untracked files.
+- Read permitted diffs.
+- Summarize modifications made during the current session.
+- Identify files associated with unfinished work.
+- Avoid automatically committing, resetting, or modifying repository files.
+
+### FR-03: Terminal History Analysis
+
+The system shall collect recent commands from supported terminal history sources when permission is granted.
+
+It shall:
+- Identify relevant build, test, and execution commands.
+- Detect useful error messages when available.
+- Associate commands with the current development task where possible.
+- Exclude sensitive values and allow users to review collected information.
+
+The application shall not record keystrokes or capture terminal sessions indiscriminately.
+
+### FR-04: Browser Context Collection
+
+The system shall optionally collect context from browser tabs selected by the user.
+
+It shall:
+- Support an approved browser extension or other permission-based integration.
+- Capture tab titles and URLs.
+- Collect page content only when explicitly enabled and technically supported.
+- Allow users to exclude specific websites and tabs.
+
+### FR-05: AI-Powered Context Analysis
+
+The system shall use Gemma or another configured compatible model to analyze collected context.
+
+The analysis shall identify:
+- The likely task being performed.
+- Completed work.
+- Current implementation status.
+- Unresolved bugs or errors.
+- Potential causes of problems.
+- Recommended next actions.
+
+The model shall distinguish evidence from speculation and shall not present an unverified bug hypothesis as a confirmed diagnosis.
+
+### FR-06: Handoff Note Generation
+
+The system shall generate a structured handoff note containing:
+
+1. **Current task:** What the developer was working on.
+2. **Progress:** Work completed during the session.
+3. **Current state:** What is working and what remains incomplete.
+4. **Blockers:** Known errors, failing tests, or unresolved issues.
+5. **Likely problem areas:** Evidence-backed hypotheses about potential bug locations.
+6. **Next steps:** A prioritized list of recommended actions.
+7. **Relevant context:** File paths, commands, and selected references that support the summary.
+
+The system shall allow users to edit, regenerate, and save handoff notes.
+
+### FR-07: End-of-Day Automation
+
+The system shall support manual and scheduled handoff generation.
+
+It shall:
+- Allow users to choose a preferred handoff time.
+- Run the local workflow when the device and application are available.
+- Notify the user when a note is ready.
+- Report failures and allow a retry.
+
+The system shall not claim to run locally scheduled tasks while the device is powered off or the application is unavailable.
+
+### FR-08: Handoff History
+
+The system shall store handoff notes locally by default.
+
+Users shall be able to:
+- View previous handoff notes.
+- Search notes by repository or date.
+- Open a previous note when resuming work.
+- Edit or delete saved notes.
+- Export a note as Markdown or plain text.
+
+### FR-09: Dashboard
+
+The application shall provide a dashboard displaying:
+- Current repository and detected development context.
+- Last handoff generation time.
+- Current processing status.
+- Generated handoff notes.
+- Recent handoff history.
+- Privacy settings and enabled integrations.
+- Errors and failed processing jobs.
+
+### FR-10: Render Integration
+
+The system may use Render to host an optional web dashboard, API, or background agent service.
+
+The implementation shall:
+- Deploy the selected cloud components using Render.
+- Support health checks and structured application logs.
+- Allow eligible background workflows to run through an appropriate Render service or scheduled job.
+- Keep local context collection and local inference independent of the cloud deployment.
+- Require explicit consent before sending context to a remote model or service.
+
+Render's suitability for the selected model runtime, scheduled workflow, and hardware requirements shall be verified before deployment.
+
+### FR-11: Monitoring and Error Handling
+
+The system shall record application errors and workflow status.
+
+If Sentry is integrated, it shall be configured to avoid collecting source code, secrets, raw terminal history, or sensitive context in telemetry by default.
+
+The system shall display understandable error messages when context collection, inference, or note generation fails.
+
+### FR-12: Privacy and Security Controls
+
+The system shall:
+- Process development context locally by default.
+- Exclude common secret patterns and sensitive environment values where possible.
+- Allow users to review collected context before processing.
+- Provide controls to disable data sources.
+- Avoid uploading private context without explicit consent.
+- Protect stored data and cloud credentials.
+- Support deletion of local handoff history.
+
+Secret filtering shall be treated as a risk-reduction measure rather than a guarantee that all sensitive information will be detected.
+
+---
+
+## 4. Non-Functional Requirements
+
+### NFR-01: Performance
+
+- Context collection should complete without noticeably disrupting the developer's workflow.
+- Handoff generation should provide a visible progress indicator.
+- Processing time should be measured on representative hardware.
+- Large diffs and histories should be limited or summarized before inference.
+
+### NFR-02: Reliability
+
+- Failed processing jobs shall produce a clear error state.
+- The application shall preserve previously generated notes if a new run fails.
+- Repeated runs should not corrupt existing handoff history.
+- Scheduled execution shall be retried only where appropriate.
+
+### NFR-03: Security
+
+- Cloud credentials shall be stored in environment variables or an appropriate secret-management mechanism.
+- Sensitive context shall be excluded from logs by default.
+- Browser permissions shall follow the principle of least privilege.
+- The system shall not execute arbitrary model-generated shell commands automatically.
+
+### NFR-04: Usability
+
+- A user shall be able to generate a handoff with minimal setup after initial configuration.
+- Handoff notes shall use concise, understandable language.
+- Evidence and recommendations shall be visually distinguishable.
+- Users shall be able to resume work without navigating a complicated interface.
+
+### NFR-05: Maintainability
+
+- Context collectors, model adapters, storage, and dashboard components shall be modular.
+- The model integration shall be replaceable without redesigning the complete application.
+- Errors and major processing stages shall be logged in a structured format.
+
+### NFR-06: Portability
+
+The architecture should minimize operating-system-specific dependencies and isolate shell-specific and browser-specific functionality behind adapters.
+
+### NFR-07: Privacy
+
+Local operation shall remain possible without a cloud account. Cloud-based functionality shall be optional and clearly identified.
+
+---
+
+## 5. Proposed System Architecture
+
+The system will use the following logical components:
+
+**1. Local Context Collector**
+- Collects Git diffs, repository status, approved terminal history, and selected browser context.
+
+**2. Context Sanitizer**
+- Removes or masks likely secrets and excludes disallowed data sources.
+- Applies configurable limits to context size.
+
+**3. AI Processing Engine**
+- Uses Gemma through a local inference runtime to interpret development context.
+- Produces structured output containing progress, blockers, hypotheses, and next steps.
+
+**4. Workflow Orchestrator**
+- Coordinates context collection, analysis, note generation, and error handling.
+- May use Mastra or another suitable workflow framework.
+
+**5. Local Storage**
+- Stores handoff notes and settings in SQLite.
+- Keeps sensitive context on the user's device by default.
+
+**6. Dashboard**
+- Provides task status, handoff history, settings, and note review.
+
+**7. Optional Cloud Services**
+- Render hosts selected web or background components.
+- Sentry provides privacy-conscious telemetry if integrated.
+- Cloud services receive only explicitly approved data.
+
+### Proposed Data Flow
+
+1. The user initiates a handoff or a configured local schedule triggers it.
+2. The context collector retrieves permitted development information.
+3. The sanitizer removes likely secrets and filters irrelevant content.
+4. The AI engine generates a structured handoff.
+5. The system validates and stores the output locally.
+6. The dashboard displays the result and notifies the user.
+7. Optional cloud integrations process only the data explicitly authorized for transmission.
+
+---
+
+## 6. Data Requirements
+
+### 6.1 Handoff Note Data
+
+Each saved handoff note shall include:
+- Unique note identifier.
+- Repository identifier or local repository path.
+- Creation timestamp.
+- Session summary.
+- Completed tasks.
+- Outstanding tasks.
+- Known errors and blockers.
+- Potential bug hypotheses.
+- Recommended next steps.
+- Relevant evidence references.
+- Model and configuration metadata, where appropriate.
+
+### 6.2 Storage
+
+SQLite shall be used for local metadata and handoff history in the initial version.
+
+Raw terminal history, full browser content, and complete diffs should not be retained unnecessarily. The system should store only the information needed to provide the requested functionality.
+
+### 6.3 Data Retention
+
+Users shall be able to delete handoff notes and associated locally stored data. Any optional cloud retention shall be documented and configurable where supported.
+
+---
+
+## 7. External Interface Requirements
+
+### 7.1 User Interface
+
+The dashboard shall provide:
+- A **Generate Handoff** action.
+- A list of detected context sources.
+- A processing status indicator.
+- A structured handoff note viewer.
+- A history page.
+- Settings for scheduling, privacy, and integrations.
+
+### 7.2 Model Interface
+
+The model adapter shall send sanitized context to the configured local model runtime and receive structured output. The system shall validate the response before saving it.
+
+### 7.3 Git Interface
+
+Git information shall be collected through supported Git commands or a suitable library, with read-only operations used for the initial version.
+
+### 7.4 Browser Interface
+
+Browser context shall be obtained only through an explicitly authorized integration. Access to all tabs or page content shall not be assumed.
+
+---
+
+## 8. Use Cases
+
+### UC-01: Generate an End-of-Day Handoff
+
+**Actor:** Developer
+
+**Precondition:** The application is configured and the relevant local development tools are available.
+
+**Main flow:**
+1. The developer selects a repository.
+2. The developer starts a handoff.
+3. The system collects and sanitizes approved context.
+4. Gemma analyzes the context.
+5. The system generates and validates the handoff note.
+6. The note is stored locally.
+7. The developer reviews the result.
+
+**Alternative flow:** If inference fails, the application reports the error and preserves previous notes.
+
+### UC-02: Resume Work the Next Day
+
+**Actor:** Developer
+
+**Main flow:**
+1. The developer opens the application.
+2. The system displays the most recent handoff note.
+3. The developer reviews the last task and current blockers.
+4. The developer follows the recommended next steps.
+5. The developer returns to the relevant repository and files.
+
+### UC-03: Generate a Scheduled Handoff
+
+**Actor:** Developer
+
+**Main flow:**
+1. The developer enables scheduling and selects a time.
+2. The local scheduler triggers the workflow while the device is available.
+3. The system collects and processes context.
+4. The application saves the note and notifies the developer.
+
+**Alternative flow:** If the device is unavailable, the application may generate the note at the next available opportunity, according to the configured scheduling policy.
+
+---
+
+## 9. Testing Requirements
+
+The application shall be evaluated using the following tests:
+
+- **Context collection:** Verify correct extraction of Git status, diffs, and supported terminal history.
+- **Secret filtering:** Test known secret patterns and confirm that sensitive values are excluded.
+- **Summary quality:** Compare generated handoff notes against manually prepared reference notes.
+- **Bug hypothesis quality:** Verify that hypotheses cite relevant evidence and remain appropriately uncertain.
+- **Scheduling:** Test manual triggers, scheduled execution, and unavailable-device behavior.
+- **Persistence:** Confirm that notes survive application restarts.
+- **Failure handling:** Simulate model errors, malformed outputs, and unavailable integrations.
+- **Privacy:** Confirm that local-only mode does not transmit development context to cloud services.
+- **Render deployment:** Test service health, logs, and any configured background workflows.
+- **Usability:** Measure how quickly a developer can understand and resume a previously interrupted task.
+
+---
+
+## 10. Risks and Limitations
+
+1. **Incorrect AI conclusions:** The model may suggest an incorrect bug location. Recommendations must be evidence-linked and presented as hypotheses.
+2. **Sensitive information leakage:** Diffs and terminal history may contain secrets. Sanitization and user review are required.
+3. **Hardware limitations:** Local inference speed depends on the selected model and available memory.
+4. **Incomplete context:** Browser tabs may have closed, shell history may be unavailable, or relevant work may not be reflected in Git.
+5. **Scheduling limitations:** Local jobs cannot run while a device is powered off unless an alternative execution environment is provided.
+6. **Cloud privacy trade-offs:** Remote inference and hosted processing may require transmitting data. Such processing must be optional and transparent.
+7. **Integration compatibility:** Browser extensions, terminal shells, and deployment services may require platform-specific adaptations.
+
+---
+
+## 11. Future Enhancements
+
+Potential future additions include:
+- IDE extensions for VS Code and compatible editors.
+- Support for additional open-weight models.
+- Automatic detection of unfinished tests and TODO comments.
+- Optional integrations with GitHub issues and pull requests.
+- Semantic search across historical handoff notes.
+- Voice-based morning briefings.
+- Team handoffs with explicit access controls.
+- More advanced evaluation of whether recommendations improve developer resumption time.
+
+---
+
+## 12. Conclusion
+
+Tomorrow-Me Handoff aims to solve a common but overlooked developer productivity problem: losing context between coding sessions. By combining local context collection, open-weight AI, structured handoff notes, and optional scheduled automation, the application helps developers resume work with less mental overhead.
+
+The project aligns with the *Slow and Steady* theme by allowing developers to leave their work in a useful state for their future selves. Its local-first architecture emphasizes privacy and model flexibility, while optional Render deployment supports hosted workflows and demonstrates practical use of the partner technology.
+
+**Project principle:** Let today's AI preserve the context so tomorrow's developer can get straight back to work.

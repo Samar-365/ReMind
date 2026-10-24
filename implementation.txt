@@ -1,0 +1,225 @@
+# Tomorrow-Me Handoff — Step-by-Step Implementation Plan
+
+**Project:** Tomorrow-Me Handoff (ReMind)  
+**SRS Reference:** srs.txt  
+**Target Environment:** Windows 11 (Primary), cross-platform ready (Python 3.10+, Node.js 18+)  
+
+---
+
+## Architecture Overview
+
+```mermaid
+graph TD
+    subgraph Client["Presentation Layer (React + Vite)"]
+        UI["Modern Dashboard"]
+        TriggerBtn["Manual 'Generate Handoff'"]
+        HistView["History & Resumption View"]
+        DiffPreview["Context & Diff Inspector"]
+    end
+
+    subgraph Backend["Local Daemon (FastAPI)"]
+        API["REST Endpoints /api/handoff"]
+        Scheduler["Background Scheduler (APScheduler)"]
+        Orchestrator["Handoff Orchestrator"]
+    end
+
+    subgraph Collectors["Context Collection Layer"]
+        GitColl["Git Status & Diff Collector"]
+        TermColl["Terminal History (PS & Bash)"]
+        BrowserColl["Browser Context Receiver"]
+    end
+
+    subgraph Sanitizer["Sanitization & Preprocessing"]
+        RegexScrubber["Secret & Credential Masker"]
+        DiffSummarizer["Diff Token Budgeter & Truncator"]
+    end
+
+    subgraph AI["Local Inference Engine"]
+        OllamaClient["Ollama Client (Gemma 2:2b / 9b)"]
+        SchemaValidator["Pydantic Output Validator"]
+    end
+
+    subgraph Storage["Persistence Layer"]
+        DB[("SQLite (handoffs.db)")]
+    end
+
+    UI --> API
+    TriggerBtn --> API
+    API --> Orchestrator
+    Scheduler --> Orchestrator
+
+    Orchestrator --> GitColl
+    Orchestrator --> TermColl
+    Orchestrator --> BrowserColl
+
+    GitColl --> RegexScrubber
+    TermColl --> RegexScrubber
+    BrowserColl --> RegexScrubber
+
+    RegexScrubber --> DiffSummarizer
+    DiffSummarizer --> OllamaClient
+    OllamaClient --> SchemaValidator
+    SchemaValidator --> DB
+    DB --> API
+```
+
+---
+
+## Milestone Breakdown
+
+### Phase 1: Environment Setup & Project Scaffolding
+*Establish the unified monorepo structure separating the backend daemon, frontend dashboard, and shared configuration.*
+
+1. **Repository Layout**:
+   ```
+   ReMind/
+   ├── backend/
+   │   ├── app/
+   │   │   ├── api/             # FastAPI route handlers
+   │   │   ├── collectors/      # Git, terminal, browser collectors
+   │   │   ├── core/            # Config, sanitizers, prompt templates
+   │   │   ├── models/          # SQLite models & Pydantic schemas
+   │   │   ├── services/        # Ollama integration & orchestrator
+   │   │   └── main.py          # App entrypoint
+   │   ├── requirements.txt
+   │   └── .env.example
+   ├── frontend/
+   │   ├── src/
+   │   │   ├── components/      # UI components (HandoffCard, DiffViewer, etc.)
+   │   │   ├── hooks/           # API query hooks
+   │   │   ├── App.jsx
+   │   │   └── index.css
+   │   ├── package.json
+   │   └── vite.config.js
+   ├── srs.txt
+   ├── implementation.txt
+   └── README.md
+   ```
+2. **Backend Dependencies**: `fastapi`, `uvicorn`, `sqlmodel` (or `sqlalchemy`), `pydantic`, `httpx` (Ollama client), `apscheduler`, `python-dotenv`.
+3. **Frontend Dependencies**: `react`, `react-dom`, `lucide-react` (icons), modern styling system.
+
+---
+
+### Phase 2: Context Collectors & Sanitization Engine
+*Extract development artifacts safely without leaking secrets or overwhelming model context.*
+
+1. **Git Context Collector (`backend/app/collectors/git.py`)**:
+   - Detect active repository directory.
+   - Run non-destructive git commands via subprocess:
+     - `git status --porcelain` (staged, unstaged, untracked files).
+     - `git diff --stat` (high-level file modification metrics).
+     - `git diff HEAD` (actual changes, omitting binary files and vendor directories).
+     - `git log -n 5 --oneline` (recent commit history for context continuity).
+2. **Terminal History Collector (`backend/app/collectors/terminal.py`)**:
+   - Windows PowerShell history: parse `(Get-PSReadLineOption).HistorySavePath` (`ConsoleHost_history.txt`).
+   - Git Bash / WSL: parse `~/.bash_history` or `~/.zsh_history`.
+   - Filter to recent session commands (last N commands or commands within a timestamp window).
+3. **Browser Context Receiver (`backend/app/collectors/browser.py`)**:
+   - Webhook endpoint `/api/browser/tabs` to receive opt-in active tab metadata (titles and URLs).
+4. **Secret Scrubber & Token Budgeter (`backend/app/core/sanitizer.py`)**:
+   - Regex patterns for API keys (OpenAI, AWS, GitHub tokens, generic bearer tokens, private keys, passwords in connection strings).
+   - Diff truncation: cap diff chunks at configurable token/character limits (e.g., max 4,000 characters per file, prioritizing files with fewer changes or core source code over lockfiles).
+
+---
+
+### Phase 3: AI Inference Engine & Prompt Engineering
+*Interface with local Gemma models via Ollama to generate strictly typed, hallucination-resistant notes.*
+
+1. **Ollama Integration (`backend/app/services/ai.py`)**:
+   - Connect to local Ollama instance (`http://localhost:11434/api/generate` or `/api/chat`).
+   - Support model selection (`gemma2:2b`, `gemma2:9b`, or custom model names).
+2. **Strict Output Schema (`backend/app/models/schemas.py`)**:
+   - Enforce the 7-section structure defined in SRS FR-06:
+     ```python
+     class HandoffNote(BaseModel):
+         current_task: str
+         progress: list[str]
+         current_state: str
+         blockers: list[str]
+         likely_problem_areas: list[dict]  # hypothesis + cited evidence
+         next_steps: list[str]             # prioritized action list
+         relevant_files: list[str]
+         relevant_commands: list[str]
+     ```
+3. **System Prompt Design**:
+   - Instruct Gemma to distinguish *concrete evidence* (e.g. failing test logs, uncommitted syntax changes) from *speculative hypotheses*.
+   - Instruct Gemma to never output fabricated paths or non-existent errors.
+
+---
+
+### Phase 4: Persistence & Local FastAPI Service
+*Expose clean REST APIs for generating, retrieving, searching, and managing handoff notes.*
+
+1. **Database Models (`backend/app/models/db.py`)**:
+   - `HandoffRecord`: ID, repository_path, repo_name, created_at, handoff_json, raw_context_summary, user_notes, is_favorite.
+2. **API Routes (`backend/app/api/`)**:
+   - `POST /api/handoff/generate`: Triggers the collector -> sanitizer -> AI inference pipeline.
+   - `GET /api/handoff/list`: Paginated and searchable list of saved handoff notes.
+   - `GET /api/handoff/{id}`: Full detail of a single note.
+   - `PUT /api/handoff/{id}`: Allows developers to edit or annotate notes.
+   - `DELETE /api/handoff/{id}`: Delete a note.
+   - `GET /api/context/preview`: Previews collected context before sending to AI (user review step).
+   - `GET /api/health`: Health check & Ollama availability status.
+
+---
+
+### Phase 5: Modern Dashboard UI (React + Vite)
+*Deliver an aesthetically pleasing, responsive developer cockpit with high visual polish.*
+
+1. **Dashboard Home**:
+   - **Active Session Hero**: Current repository path, detected git status badges (e.g. `3 modified`, `1 untracked`), active branch.
+   - **One-Click Handoff Button**: With animated progress states (*Collecting context* -> *Sanitizing* -> *Consulting Gemma* -> *Finalizing*).
+2. **Latest Resumption View ("Tomorrow's Morning View")**:
+   - High-contrast, clean cards for:
+     - 🎯 **What you were doing** (Current Task).
+     - 🚧 **Blockers & Hypotheses** (with cited lines/files).
+     - 🚀 **Immediate Next Steps** (with checkboxes to cross off resumed work).
+3. **Context Inspector & Sanitization Review**:
+   - Collapsible drawer allowing developers to inspect the scraped diff and terminal history before or after generation.
+4. **History & Search Page**:
+   - Filter by date range or repository name.
+   - Export to Markdown or copy directly to clipboard.
+
+---
+
+### Phase 6: Automation, Scheduling & Background Execution
+*Support hands-free end-of-day reminders and automated generation (FR-07).*
+
+1. **In-Daemon Scheduler (`backend/app/services/scheduler.py`)**:
+   - `APScheduler` cron trigger running locally.
+   - Configurable end-of-day time (e.g., 18:00 on weekdays).
+   - Windows desktop notification (via `plyer` or `win10toast`) notifying: *"Your Tomorrow-Me Handoff note is ready for review."*
+2. **Graceful Offline Handling**:
+   - If the machine was asleep or off during the scheduled hour, trigger upon first wake-up or prompt the user.
+
+---
+
+### Phase 7: Verification, Hardening & Optional Render Deployment
+*Fulfill NFRs, security constraints, and external interface specifications.*
+
+1. **Security & Secret Leak Testing**:
+   - Unit tests against dummy test vectors containing AWS keys, GitHub PATs, and `.env` passwords to ensure regex scrubbing succeeds 100%.
+2. **AI Output Quality Benchmarking**:
+   - Test against 3 mock repositories (e.g., a broken test suite, a mid-refactor state, an empty unstaged state).
+3. **Render Deployment Configuration (`render.yaml` / Dockerfile)**:
+   - Provide a Dockerfile and Render blueprint for deploying the web dashboard as an optional team-shared viewer.
+   - Maintain strict separation so local code/diffs are not uploaded to Render without explicit consent.
+
+---
+
+## Task Execution Sequence
+
+| Step | Component | Deliverable |
+| :--- | :--- | :--- |
+| **1.1** | Backend | Scaffold FastAPI app, requirements, SQLite database engine |
+| **1.2** | Collectors | Implement Git CLI wrapper and status/diff extraction |
+| **1.3** | Collectors | Implement PowerShell & Bash terminal history parser |
+| **1.4** | Sanitizer | Implement regex secret sanitizer and diff token limiter |
+| **1.5** | AI Service | Implement Ollama integration with Gemma structured JSON schema |
+| **1.6** | Backend API | Implement `/api/handoff/generate`, `/preview`, and CRUD endpoints |
+| **2.1** | Frontend | Initialize Vite + React project with modern typography & styling |
+| **2.2** | Frontend | Build Handoff Generation view with live progress states |
+| **2.3** | Frontend | Build 7-section Handoff Note Resumption Card & Markdown exporter |
+| **2.4** | Frontend | Build History, Search, and Context Review Drawer |
+| **3.1** | Automation | Integrate APScheduler for scheduled end-of-day handoff |
+| **3.2** | Hardening | End-to-end tests for secret exclusion and offline handling |
