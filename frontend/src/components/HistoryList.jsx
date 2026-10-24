@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Database, 
+  FolderArchive, 
   Search, 
   Trash2, 
   Bookmark, 
@@ -19,28 +19,28 @@ export default function HistoryList({
   selectedId 
 }) {
   return (
-    <div className="cyber-panel">
+    <div className="card">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4" style={{ marginBottom: '1.25rem' }}>
         <div>
-          <h3 className="cyber-title flex items-center gap-2" style={{ fontSize: '1.15rem' }}>
-            <Database size={16} style={{ color: 'var(--neon-cyan)' }} />
-            <span>SESSION_ARCHIVES // HANDOFF_LOGS</span>
+          <h3 className="section-label" style={{ fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '0.1rem' }}>
+            <FolderArchive size={18} style={{ color: 'var(--accent-blue)' }} />
+            <span>Past Handoff Notes</span>
           </h3>
           <p className="text-xs text-muted">
-            SQLite persistence / local records telemetry
+            Saved local records stored securely on this computer
           </p>
         </div>
 
         {/* Search */}
         <div style={{ position: 'relative', minWidth: '260px' }}>
-          <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+          <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="FILTER BY KEYWORD..."
-            className="cyber-input"
-            style={{ paddingLeft: '2.25rem', fontSize: '0.75rem', padding: '0.5rem 1rem 0.5rem 2.25rem' }}
+            placeholder="Search notes or tasks..."
+            className="form-input"
+            style={{ paddingLeft: '2.25rem', fontSize: '0.8125rem', padding: '0.45rem 0.75rem 0.45rem 2.25rem' }}
           />
         </div>
       </div>
@@ -55,11 +55,12 @@ export default function HistoryList({
                 onClick={() => onSelectNote(item.id)}
                 className="flex items-center justify-between gap-4"
                 style={{
-                  padding: '0.85rem 1rem',
-                  border: '1px solid ' + (isSelected ? 'var(--neon-cyan)' : 'var(--border-dim)'),
-                  background: isSelected ? 'rgba(0, 243, 255, 0.08)' : '#070d14',
-                  boxShadow: isSelected ? '0 0 12px rgba(0, 243, 255, 0.2)' : 'none',
+                  padding: '0.9rem 1.1rem',
+                  borderRadius: '8px',
+                  border: '1px solid ' + (isSelected ? 'var(--accent-blue)' : 'var(--border-light)'),
+                  background: isSelected ? 'var(--accent-blue-light)' : '#FFFFFF',
                   cursor: 'pointer',
+                  boxShadow: isSelected ? '0 1px 3px rgba(37, 99, 235, 0.15)' : 'var(--shadow-sm)',
                   transition: 'all 0.15s ease'
                 }}
               >
@@ -69,26 +70,26 @@ export default function HistoryList({
                       e.stopPropagation();
                       onToggleFavorite(item.id, !item.is_favorite);
                     }}
-                    className="btn-cyber-icon"
-                    style={{ padding: '0.2rem', border: 'none', background: 'transparent', color: item.is_favorite ? 'var(--neon-amber)' : 'var(--text-dim)' }}
+                    className="btn-icon"
+                    style={{ padding: '0.2rem', border: 'none', background: 'transparent', color: item.is_favorite ? 'var(--accent-amber)' : 'var(--text-dim)' }}
                   >
-                    <Bookmark size={15} fill={item.is_favorite ? "currentColor" : "none"} />
+                    <Bookmark size={16} fill={item.is_favorite ? "currentColor" : "none"} />
                   </button>
 
                   <div style={{ minWidth: 0 }}>
-                    <h4 style={{ fontSize: '0.85rem', color: '#fff', marginBottom: '0.25rem' }}>
+                    <h4 style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
                       {item.current_task}
                     </h4>
 
                     <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
-                      <span className="flex items-center gap-1" style={{ color: 'var(--neon-cyan)' }}>
-                        <GitBranch size={11} />
+                      <span className="flex items-center gap-1 font-mono" style={{ color: 'var(--accent-blue)' }}>
+                        <GitBranch size={12} />
                         {item.repo_name} ({item.branch || 'main'})
                       </span>
-                      <span>//</span>
+                      <span>•</span>
                       <span className="flex items-center gap-1">
-                        <Calendar size={11} />
-                        {new Date(item.created_at).toLocaleDateString()} {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <Calendar size={12} />
+                        {new Date(item.created_at).toLocaleDateString()} at {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </div>
@@ -100,21 +101,20 @@ export default function HistoryList({
                       e.stopPropagation();
                       onDeleteNote(item.id);
                     }}
-                    className="btn-cyber-icon"
-                    style={{ color: 'var(--text-dim)' }}
+                    className="btn-icon"
                     title="Delete Note"
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={14} />
                   </button>
-                  <ChevronRight size={14} style={{ color: isSelected ? 'var(--neon-cyan)' : 'var(--text-dim)' }} />
+                  <ChevronRight size={16} style={{ color: isSelected ? 'var(--accent-blue)' : 'var(--text-dim)' }} />
                 </div>
               </div>
             );
           })}
         </div>
       ) : (
-        <div style={{ padding: '2rem', textAlign: 'center', border: '1px dashed var(--border-dim)', color: 'var(--text-dim)', fontSize: '0.75rem' }}>
-          &gt; NO PERSISTED SESSIONS RECORDED. RUN HANDOFF_SYNTHESIS TO GENERATE INITIAL LOG.
+        <div style={{ padding: '2.5rem', textAlign: 'center', borderRadius: '8px', border: '1px dashed var(--border-light)', color: 'var(--text-muted)', fontSize: '0.8125rem', background: '#FFFFFF' }}>
+          No handoff notes created yet. Click "Generate Handoff Note" to start your first session brief.
         </div>
       )}
     </div>

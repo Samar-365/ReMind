@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Terminal,
-  RotateCw,
-  AlertCircle,
-  Cpu,
-  Layers
+import { 
+  Sparkles, 
+  RotateCw, 
+  AlertCircle 
 } from 'lucide-react';
 
 import SessionHero from './components/SessionHero';
@@ -12,10 +10,10 @@ import ResumptionCard from './components/ResumptionCard';
 import ContextInspector from './components/ContextInspector';
 import HistoryList from './components/HistoryList';
 
-import {
-  fetchAggregatedContext,
-  generateHandoffNote,
-  fetchHandoffHistory,
+import { 
+  fetchAggregatedContext, 
+  generateHandoffNote, 
+  fetchHandoffHistory, 
   fetchHandoffDetail,
   updateHandoff,
   deleteHandoff,
@@ -60,7 +58,7 @@ export default function App() {
         setSelectedNote(latestDetail);
       }
     } catch (err) {
-      setErrorMessage(`TELEMETRY ERROR: ${err.message}`);
+      setErrorMessage(`Unable to connect: ${err.message}`);
     } finally {
       setIsLoadingContext(false);
     }
@@ -69,11 +67,11 @@ export default function App() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     setErrorMessage('');
-    setStepStage('SCRUBBING_CONTEXT_STREAM...');
+    setStepStage('Collecting recent git diffs & terminal history...');
 
     try {
       await new Promise(r => setTimeout(r, 600));
-      setStepStage('GEMMA2_LOCAL_INFERENCE...');
+      setStepStage('Analyzing with local Gemma model...');
 
       const newRecord = await generateHandoffNote({
         user_notes: userNotes,
@@ -82,7 +80,7 @@ export default function App() {
         include_browser: true
       });
 
-      setStepStage('VALIDATING_SCHEMA_AST...');
+      setStepStage('Structuring resumption checklist...');
       await new Promise(r => setTimeout(r, 400));
 
       setSelectedNote(newRecord);
@@ -92,7 +90,7 @@ export default function App() {
       const updatedHistory = await fetchHandoffHistory();
       setHistory(updatedHistory);
     } catch (err) {
-      setErrorMessage(`SYNTHESIS FAILED: ${err.message}`);
+      setErrorMessage(`Generation failed: ${err.message}`);
     } finally {
       setIsGenerating(false);
       setStepStage('');
@@ -105,7 +103,7 @@ export default function App() {
       setSelectedNote(detail);
       window.scrollTo({ top: 300, behavior: 'smooth' });
     } catch (err) {
-      setErrorMessage(`LOAD FAILED: ${err.message}`);
+      setErrorMessage(`Failed to open note: ${err.message}`);
     }
   };
 
@@ -117,12 +115,12 @@ export default function App() {
       }
       setHistory(prev => prev.map(h => h.id === id ? { ...h, is_favorite: newStatus } : h));
     } catch (err) {
-      setErrorMessage(`BOOKMARK FAILED: ${err.message}`);
+      setErrorMessage(`Failed to bookmark: ${err.message}`);
     }
   };
 
   const handleDeleteNote = async (id) => {
-    if (!window.confirm("CONFIRM_ACTION: Purge handoff log from SQLite?")) return;
+    if (!window.confirm("Are you sure you want to delete this handoff note?")) return;
     try {
       await deleteHandoff(id);
       setHistory(prev => prev.filter(h => h.id !== id));
@@ -130,30 +128,33 @@ export default function App() {
         setSelectedNote(null);
       }
     } catch (err) {
-      setErrorMessage(`PURGE FAILED: ${err.message}`);
+      setErrorMessage(`Failed to delete: ${err.message}`);
     }
   };
 
   const filteredHistory = history.filter(item => {
     if (!searchQuery) return true;
     return item.current_task.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.repo_name.toLowerCase().includes(searchQuery.toLowerCase());
+           item.repo_name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   return (
     <div className="app-container">
-      {/* Cyber Header Navigation */}
-      <header className="flex justify-between items-center" style={{ paddingBottom: '1.25rem', marginBottom: '1.75rem', borderBottom: '1px solid var(--border-dim)' }}>
+      {/* Top Header Navigation */}
+      <header className="flex justify-between items-center" style={{ paddingBottom: '1.25rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-light)' }}>
         <div className="flex items-center gap-3">
-          <div style={{ width: '38px', height: '38px', background: '#09131d', border: '1px solid var(--neon-cyan)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 10px rgba(0, 243, 255, 0.4)' }}>
-            <Terminal size={20} style={{ color: 'var(--neon-cyan)' }} />
+          <div style={{ width: '40px', height: '40px', background: 'var(--accent-blue-light)', border: '1px solid rgba(37, 99, 235, 0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Sparkles size={20} style={{ color: 'var(--accent-blue)' }} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="cyber-title" style={{ fontSize: '1.2rem', margin: 0 }}>REMIND</h1>
+              <h1 className="header-title" style={{ margin: 0 }}>ReMind</h1>
+              <span className="pill pill-default" style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>
+                v0.1.0
+              </span>
             </div>
-            <p className="text-xs text-muted" style={{ letterSpacing: '0.05em' }}>
-              TOMORROW-ME DEVELOPER HANDOFF ENGINE
+            <p className="text-xs text-muted">
+              Tomorrow-Me Developer Resumption Assistant
             </p>
           </div>
         </div>
@@ -161,30 +162,31 @@ export default function App() {
         <div className="flex items-center gap-3">
           <button
             onClick={loadDashboard}
-            className="btn-cyber-icon"
-            title="Refresh Telemetry"
+            className="btn-secondary"
+            title="Refresh dashboard"
           >
-            <RotateCw size={14} className={isLoadingContext ? 'animate-spin' : ''} />
+            <RotateCw size={13} className={isLoadingContext ? 'animate-spin' : ''} />
+            <span>Refresh</span>
           </button>
         </div>
       </header>
 
-      {/* Error telemetry alert */}
+      {/* Error Alert */}
       {errorMessage && (
-        <div style={{ marginBottom: '1.5rem', padding: '0.85rem 1rem', background: 'rgba(255, 0, 85, 0.15)', border: '1px solid var(--neon-crimson)', color: '#ffb3c6', fontSize: '0.8rem' }} className="flex justify-between items-center">
+        <div style={{ marginBottom: '1.5rem', padding: '0.85rem 1rem', background: 'var(--accent-rose-light)', border: '1px solid rgba(225, 29, 72, 0.3)', borderRadius: '8px', color: 'var(--accent-rose)', fontSize: '0.875rem' }} className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <AlertCircle size={16} />
+            <AlertCircle size={18} />
             <span>{errorMessage}</span>
           </div>
-          <button onClick={() => setErrorMessage('')} className="btn-cyber-secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.65rem' }}>
-            ACKNOWLEDGE
+          <button onClick={() => setErrorMessage('')} className="btn-secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
+            Dismiss
           </button>
         </div>
       )}
 
-      {/* Main Command & Telemetry Center */}
+      {/* Main Content */}
       <main>
-        {/* Active Session Hero & Trigger */}
+        {/* Active Session & Generate Hero */}
         <SessionHero
           context={context}
           onGenerate={handleGenerate}
@@ -202,7 +204,7 @@ export default function App() {
           />
         )}
 
-        {/* Collapsible Context & Sanitization Inspector */}
+        {/* Context Inspector */}
         <ContextInspector context={context} />
 
         {/* History List */}
@@ -217,10 +219,10 @@ export default function App() {
         />
       </main>
 
-      {/* Footer System Telemetry */}
-      <footer className="flex justify-between items-center text-xs text-dim" style={{ marginTop: '3.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-dim)' }}>
-        <p>// SYSTEM: PRIVACY_VERIFIED • AIRGAPPED_LOCAL_EXECUTION</p>
-        <p className="font-mono" style={{ color: 'var(--neon-cyan)' }}>LOCAL_GEMMA_2 // ZERO_CLOUD_LEAK</p>
+      {/* Footer */}
+      <footer className="flex justify-between items-center text-xs text-muted" style={{ marginTop: '4rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-light)' }}>
+        <p>Tomorrow-Me Handoff • Privacy-first, local AI resumption notes.</p>
+        <p>Local Gemma 2 Model • Zero Cloud Upload</p>
       </footer>
     </div>
   );

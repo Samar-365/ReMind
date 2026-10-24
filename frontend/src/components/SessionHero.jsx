@@ -3,12 +3,10 @@ import {
   GitBranch, 
   Terminal, 
   Globe, 
-  Cpu, 
-  Activity, 
+  FolderGit2, 
+  FileEdit, 
   Sparkles, 
-  Loader2, 
-  ShieldCheck,
-  Radio
+  Loader2 
 } from 'lucide-react';
 
 export default function SessionHero({ 
@@ -26,102 +24,95 @@ export default function SessionHero({
   const untrackedCount = status.untracked?.length || 0;
 
   return (
-    <div className="cyber-panel">
+    <div className="card">
       <div className="flex flex-col lg-flex-row justify-between items-start gap-6">
         <div>
-          {/* Status Badges */}
-          <div className="flex items-center gap-2" style={{ marginBottom: '0.75rem' }}>
-            <span className="cyber-badge badge-emerald">
-              <Radio size={12} className="animate-pulse" />
-              DAEMON // ONLINE
+          <div className="flex items-center gap-2" style={{ marginBottom: '0.25rem' }}>
+            <span className="pill pill-green" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>
+              ● Ready
             </span>
-            <span className="cyber-badge badge-dim">
-              <ShieldCheck size={12} style={{ color: 'var(--neon-cyan)' }} />
-              AIRGAP_SHIELD // LOCAL_GEMMA
-            </span>
-            <span className="cyber-badge badge-cyan">
-              TELEMETRY_PORT // 8001
+            <span className="text-xs text-muted">
+              Local AI Engine (No cloud transmission)
             </span>
           </div>
 
-          {/* Repo Name */}
-          <h1 className="cyber-title flex items-center gap-3" style={{ marginBottom: '0.5rem' }}>
-            <Cpu size={24} style={{ color: 'var(--neon-cyan)' }} />
-            <span>SYS_REPO: {git.repo_name ? git.repo_name.toUpperCase() : "ROOT_WORKSPACE"}</span>
+          <h1 className="header-title flex items-center gap-2" style={{ fontSize: '1.5rem', marginTop: '0.25rem' }}>
+            <FolderGit2 size={24} style={{ color: 'var(--accent-blue)' }} />
+            <span>{git.repo_name ? git.repo_name : "Active Project Workspace"}</span>
           </h1>
 
-          {/* Metrics bar */}
-          <div className="flex flex-wrap items-center gap-4 text-xs" style={{ marginTop: '0.75rem' }}>
-            <div className="flex items-center gap-1.5 cyber-badge badge-dim">
-              <GitBranch size={13} style={{ color: 'var(--neon-cyan)' }} />
-              <span style={{ color: '#fff' }}>BRANCH: {git.branch || 'main'}</span>
+          {/* Context Metrics Summary */}
+          <div className="flex flex-wrap items-center gap-3 text-xs" style={{ marginTop: '0.75rem' }}>
+            <div className="pill pill-default">
+              <GitBranch size={13} style={{ color: 'var(--text-secondary)' }} />
+              <span className="font-mono">{git.branch || 'main'}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="status-pill pill-staged">
-                +{stagedCount} STAGED
+              <span className="pill pill-blue">
+                {stagedCount} staged
               </span>
-              <span className="status-pill pill-modified">
-                ~{unstagedCount} MODIFIED
+              <span className="pill pill-amber">
+                {unstagedCount} modified
               </span>
-              <span className="status-pill pill-untracked">
-                ?{untrackedCount} UNTRACKED
+              <span className="pill pill-default">
+                {untrackedCount} untracked
               </span>
             </div>
 
             <div className="flex items-center gap-1.5 text-muted">
               <Terminal size={13} />
-              <span>LOGS: {context?.terminal?.commands?.length || 0} CMDS</span>
+              <span>{context?.terminal?.commands?.length || 0} recent commands</span>
             </div>
 
             <div className="flex items-center gap-1.5 text-muted">
               <Globe size={13} />
-              <span>TABS: {context?.browser?.tabs?.length || 0} REFS</span>
+              <span>{context?.browser?.tabs?.length || 0} reference tabs</span>
             </div>
           </div>
         </div>
 
-        {/* Action Button */}
-        <div className="flex flex-col items-start gap-2" style={{ minWidth: '280px' }}>
+        {/* Generate Action Button */}
+        <div className="flex flex-col items-start gap-2" style={{ minWidth: '240px' }}>
           <button
             onClick={onGenerate}
             disabled={isGenerating}
-            className="btn-cyber-primary"
+            className="btn-primary"
             style={{ width: '100%' }}
           >
             {isGenerating ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                <span>{stepStage || "PROCESSING..."}</span>
+                <span>{stepStage || "Creating note..."}</span>
               </>
             ) : (
               <>
                 <Sparkles size={16} />
-                <span>EXECUTE // HANDOFF_SYNTHESIS</span>
+                <span>Generate Handoff Note</span>
               </>
             )}
           </button>
 
           {isGenerating && (
-            <p className="text-xs animate-pulse" style={{ color: 'var(--neon-cyan)', textAlign: 'center', width: '100%' }}>
-              [INFERENCE RUNNING // PARSING AST DIFFS]
+            <p className="text-xs text-muted" style={{ textAlign: 'center', width: '100%' }}>
+              Inspecting diffs & drafting resume checklist...
             </p>
           )}
         </div>
       </div>
 
-      {/* Developer Context Injector */}
-      <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-dim)' }}>
-        <div className="flex items-center gap-2 cyber-label" style={{ marginBottom: '0.5rem' }}>
-          <Activity size={13} />
-          <span>INJECT_SESSION_NOTES // OPTIONAL</span>
-        </div>
+      {/* Developer Context Note Input */}
+      <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-light)' }}>
+        <label className="section-label" style={{ marginBottom: '0.4rem' }}>
+          <FileEdit size={14} style={{ color: 'var(--accent-blue)' }} />
+          <span>Add session note or goal (Optional)</span>
+        </label>
         <input
           type="text"
           value={userNotes}
           onChange={(e) => setUserNotes(e.target.value)}
-          placeholder="> specify focus area, e.g. 'Investigating race condition in auth token refresh'"
-          className="cyber-input"
+          placeholder="e.g. Worked on payment webhook and stopped before handling timeouts"
+          className="form-input"
         />
       </div>
     </div>
