@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   GitBranch, 
   Terminal, 
@@ -7,7 +7,9 @@ import {
   FileEdit, 
   Sparkles, 
   Loader2,
-  Layers
+  ChevronDown,
+  ChevronUp,
+  GitCommitHorizontal
 } from 'lucide-react';
 
 export default function SessionHero({ 
@@ -16,21 +18,21 @@ export default function SessionHero({
   isGenerating, 
   stepStage, 
   userNotes, 
-  setUserNotes,
-  onSelectWorkspace,
-  selectedRepoPath
+  setUserNotes 
 }) {
-  const git = context?.git || {};
-  const status = git?.status || {};
-  const stagedCount = status.staged?.length || 0;
-  const unstagedCount = status.unstaged?.length || 0;
-  const untrackedCount = status.untracked?.length || 0;
-  const workspaces = context?.workspaces || [];
+  const [expandedProjects, setExpandedProjects] = useState({});
+  const activeProjects = context?.active_projects || [];
+  const totalCommits = activeProjects.reduce((sum, p) => sum + (p.commit_count || 0), 0);
+  const totalChanges = activeProjects.reduce((sum, p) => sum + (p.uncommitted_changes || 0), 0);
+
+  const toggleProject = (idx) => {
+    setExpandedProjects(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
 
   return (
     <div className="card">
       <div className="flex flex-col lg-flex-row justify-between items-start gap-6">
-        <div style={{ width: '100%' }}>
+        <div style={{ flex: 1 }}>
           <div className="flex items-center gap-2" style={{ marginBottom: '0.25rem' }}>
             <span className="pill pill-green" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>
               ● Ready
@@ -40,113 +42,120 @@ export default function SessionHero({
             </span>
           </div>
 
-          {/* All Projects Worked On Before Signing Off */}
-          {workspaces.length > 0 && (
-            <div style={{ marginTop: '0.85rem', marginBottom: '1.25rem', padding: '0.85rem 1rem', background: '#F8FAFC', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-              <div className="flex justify-between items-center" style={{ marginBottom: '0.5rem' }}>
-                <span className="text-xs text-muted" style={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Projects Worked On Today (Pre-Sign-Off Overview):
-                </span>
-                <span className="text-xs text-muted">
-                  {workspaces.length} repositories detected
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2.5">
-                {workspaces.map((ws, i) => {
-                  const isActive = (selectedRepoPath || context?.repo_path)?.toLowerCase() === ws.path?.toLowerCase();
-                  const hasChanges = (ws.modified > 0 || ws.staged > 0 || ws.untracked > 0);
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => onSelectWorkspace && onSelectWorkspace(ws.path)}
-                      className="btn-secondary"
-                      style={{
-                        background: isActive ? '#FFFFFF' : '#F1F5F9',
-                        borderColor: isActive ? 'var(--accent-blue)' : 'var(--border-light)',
-                        boxShadow: isActive ? '0 0 0 2px rgba(37, 99, 235, 0.15)' : 'none',
-                        padding: '0.45rem 0.85rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        cursor: 'pointer',
-                        borderRadius: '8px',
-                        transition: 'all 0.15s ease'
-                      }}
-                      title={ws.path}
-                    >
-                      <FolderGit2 size={15} style={{ color: isActive ? 'var(--accent-blue)' : 'var(--text-secondary)' }} />
-                      <div style={{ textAlign: 'left' }}>
-                        <div className="flex items-center gap-1.5">
-                          <span style={{ fontWeight: isActive ? 700 : 600, color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                            {ws.name}
-                          </span>
-                          <span className="font-mono text-xs text-muted">({ws.branch})</span>
-                        </div>
-                      </div>
-
-                      {/* Status indicator */}
-                      {hasChanges ? (
-                        <span className="pill pill-amber" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem', marginLeft: '0.25rem' }}>
-                          {ws.staged > 0 ? `${ws.staged} staged` : ''}
-                          {ws.staged > 0 && ws.modified > 0 ? ', ' : ''}
-                          {ws.modified > 0 ? `${ws.modified} uncommitted` : ''}
-                          {ws.staged === 0 && ws.modified === 0 && ws.untracked > 0 ? `${ws.untracked} untracked` : ''}
-                        </span>
-                      ) : (
-                        <span className="pill pill-default" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem', marginLeft: '0.25rem', color: '#16A34A', background: '#DCFCE7' }}>
-                          ✓ Clean
-                        </span>
-                      )}
-
-                      {isActive && (
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-blue)', marginLeft: '0.2rem' }}></span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <h1 className="header-title flex items-center gap-2" style={{ fontSize: '1.5rem', marginTop: '0.5rem' }}>
+          <h1 className="header-title flex items-center gap-2" style={{ fontSize: '1.5rem', marginTop: '0.25rem' }}>
             <FolderGit2 size={24} style={{ color: 'var(--accent-blue)' }} />
-            <span>{git.repo_name ? git.repo_name : "Active Project Workspace"}</span>
+            <span>Today's Development Activity</span>
           </h1>
-          {context?.repo_path && (
-            <p className="text-xs font-mono text-muted" style={{ marginTop: '0.15rem' }}>
-              Path: {context.repo_path}
-            </p>
-          )}
 
-          {/* Context Metrics Summary */}
-          <div className="flex flex-wrap items-center gap-3 text-xs" style={{ marginTop: '0.75rem' }}>
-            <div className="pill pill-default">
-              <GitBranch size={13} style={{ color: 'var(--text-secondary)' }} />
-              <span className="font-mono">{git.branch || 'main'}</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="pill pill-blue">
-                {stagedCount} staged
-              </span>
+          {/* Summary metrics */}
+          <div className="flex flex-wrap items-center gap-3 text-xs" style={{ marginTop: '0.5rem' }}>
+            <span className="pill pill-blue">
+              {activeProjects.length} {activeProjects.length === 1 ? 'project' : 'projects'}
+            </span>
+            <span className="pill pill-default">
+              <GitCommitHorizontal size={12} />
+              {totalCommits} commits today
+            </span>
+            {totalChanges > 0 && (
               <span className="pill pill-amber">
-                {unstagedCount} modified
+                {totalChanges} uncommitted
               </span>
-              <span className="pill pill-default">
-                {untrackedCount} untracked
-              </span>
-            </div>
-
+            )}
             <div className="flex items-center gap-1.5 text-muted">
               <Terminal size={13} />
               <span>{context?.terminal?.commands?.length || 0} recent commands</span>
             </div>
-
             <div className="flex items-center gap-1.5 text-muted">
               <Globe size={13} />
               <span>{context?.browser?.tabs?.length || 0} reference tabs</span>
             </div>
           </div>
+
+          {/* Active Projects List */}
+          {activeProjects.length > 0 && (
+            <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {activeProjects.map((project, idx) => (
+                <div key={idx} style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-hover, #F1F5F9)',
+                  transition: 'box-shadow 0.15s ease',
+                }}>
+                  <div 
+                    className="flex items-center justify-between"
+                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                    onClick={() => toggleProject(idx)}
+                  >
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <FolderGit2 size={16} style={{ color: 'var(--accent-blue)', flexShrink: 0 }} />
+                      <span style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                        {project.repo_name}
+                      </span>
+                      <span className="pill pill-default" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem', gap: '0.2rem' }}>
+                        <GitBranch size={10} />
+                        {project.branch}
+                      </span>
+                      <span className="pill pill-blue" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
+                        {project.commit_count} commits
+                      </span>
+                      {project.uncommitted_changes > 0 && (
+                        <span className="pill pill-amber" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
+                          {project.uncommitted_changes} uncommitted
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ color: 'var(--text-muted)', flexShrink: 0, marginLeft: '0.5rem' }}>
+                      {expandedProjects[idx] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </div>
+                  </div>
+
+                  {/* Commit messages */}
+                  {project.commits_today && project.commits_today.length > 0 && (
+                    <div style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
+                      {project.commits_today
+                        .slice(0, expandedProjects[idx] ? undefined : 3)
+                        .map((commit, ci) => (
+                          <div key={ci} style={{ 
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '0.4rem',
+                            fontSize: '0.8rem', 
+                            color: 'var(--text-secondary)',
+                            padding: '0.15rem 0',
+                            lineHeight: '1.4',
+                          }}>
+                            <GitCommitHorizontal size={12} style={{ 
+                              marginTop: '3px', 
+                              flexShrink: 0, 
+                              color: 'var(--accent-blue)',
+                              opacity: 0.7,
+                            }} />
+                            <span className="font-mono" style={{ fontSize: '0.78rem' }}>{commit}</span>
+                          </div>
+                        ))}
+                      {!expandedProjects[idx] && project.commits_today.length > 3 && (
+                        <span style={{ 
+                          fontSize: '0.72rem', 
+                          color: 'var(--text-muted)', 
+                          fontStyle: 'italic',
+                          paddingLeft: '1rem',
+                        }}>
+                          +{project.commits_today.length - 3} more commits…
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeProjects.length === 0 && (
+            <p className="text-sm text-muted" style={{ marginTop: '0.75rem' }}>
+              No project activity detected today yet. Generate a handoff to capture your current state.
+            </p>
+          )}
         </div>
 
         {/* Generate Action Button */}

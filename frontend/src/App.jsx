@@ -33,19 +33,17 @@ export default function App() {
   const [stepStage, setStepStage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const [selectedRepoPath, setSelectedRepoPath] = useState(null);
-
   // Initial load
   useEffect(() => {
-    loadDashboard(selectedRepoPath);
-  }, [selectedRepoPath]);
+    loadDashboard();
+  }, []);
 
-  const loadDashboard = async (repoPath = null) => {
+  const loadDashboard = async () => {
     setIsLoadingContext(true);
     setErrorMessage('');
     try {
       const [ctx, hist, ai] = await Promise.all([
-        fetchAggregatedContext(repoPath ? { repo_path: repoPath } : {}),
+        fetchAggregatedContext(),
         fetchHandoffHistory(),
         fetchAiStatus().catch(() => ({ available: false }))
       ]);
@@ -66,10 +64,6 @@ export default function App() {
     }
   };
 
-  const handleSelectWorkspace = (path) => {
-    setSelectedRepoPath(path);
-  };
-
   const handleGenerate = async () => {
     setIsGenerating(true);
     setErrorMessage('');
@@ -80,7 +74,6 @@ export default function App() {
       setStepStage('Analyzing with local Gemma model...');
 
       const newRecord = await generateHandoffNote({
-        repo_path: selectedRepoPath || context?.repo_path,
         user_notes: userNotes,
         include_git: true,
         include_terminal: true,
@@ -201,8 +194,6 @@ export default function App() {
           stepStage={stepStage}
           userNotes={userNotes}
           setUserNotes={setUserNotes}
-          onSelectWorkspace={handleSelectWorkspace}
-          selectedRepoPath={selectedRepoPath}
         />
 
         {/* Resumption Card (Tomorrow's Morning View) */}

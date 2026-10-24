@@ -1,6 +1,8 @@
 import os
 import re
+import subprocess
 from typing import Optional, List, Dict, Any
+from datetime import datetime
 from pydantic import BaseModel
 from app.collectors.git import GitCollector
 from app.collectors.terminal import TerminalCollector
@@ -13,41 +15,106 @@ class ContextConfigRequest(BaseModel):
     include_browser: bool = True
     terminal_command_count: int = 25
 
-class ProjectWorkspaceInfo(BaseModel):
-    name: str
-    path: str
-    branch: str = "main"
-    staged: int = 0
-    modified: int = 0
-    untracked: int = 0
-    is_active: bool = False
+def _is_ignored_path(path: str) -> bool:
+    """Filter out home directory root and system paths that aren't real projects."""
+    norm = os.path.normpath(path).lower()
+    home = os.path.normpath(os.path.expanduser("~")).lower()
+    if norm == home:
+        return True
+    ignored_prefixes = [
+        os.path.join(home, "appdata").lower(),
+        r"c:\windows",
+        r"c:\program files",
+        r"c:\programdata",
+    ]
+    return any(norm.startswith(p) for p in ignored_prefixes)
 
-def detect_recent_workspaces() -> List[Dict[str, Any]]:
+def detect_active_workspace_path() -> Optional[str]:
     """
-    Scans recent terminal history and current directories to find all
-    active Git repositories the user worked on during this session.
+    Detects the last git repository the user was working in before signing off.
+    Traces forward through terminal history so the final cd-to-repo wins.
+    Filters out the user's home directory and system paths.
     """
-    detected = []
-    seen_paths = set()
+    appdata = os.getenv("APPDATA")
+    if not appdata:
+        return None
 
-    # 1. Current workspace
-    current_repo_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
-    c_curr = GitCollector(repo_path=current_repo_root)
-    if c_curr.is_git_repo():
-        norm = os.path.normcase(os.path.realpath(current_repo_root))
-        seen_paths.add(norm)
-        status = c_curr.get_status_porcelain()
-        detected.append({
-            "name": c_curr.get_repo_name(),
-            "path": current_repo_root,
-            "branch": c_curr.get_current_branch(),
-            "staged": len(status.get("staged", [])),
-            "modified": len(status.get("unstaged", [])),
-            "untracked": len(status.get("untracked", [])),
-            "is_active": True,
-        })
+    ps_history = os.path.join(appdata, r"Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt")
+    if not os.path.exists(ps_history):
+        return None
 
-    # 2. Check recent PowerShell history cd commands
+    try:
+        with open(ps_history, "r", encoding="utf-8", errors="replace") as f:
+            lines = [line.strip() for line in f.readlines() if line.strip()]
+    except Exception:
+        return None
+
+    last_repo = None
+
+    # Trace forward through the last 300 commands — the final match is the
+    # repository the user was in right before they signed off.
+    for line in lines[-300:]:
+        match = re.match(r'(?i)^(?:cd|pushd|Set-Location)\s+["\']?([^"\'\n\r]+)["\']?', line)
+        if match:
+            raw_dir = match.group(1).strip()
+            raw_dir = os.path.expanduser(raw_dir)
+            if os.path.isabs(raw_dir) and os.path.isdir(raw_dir):
+                if _is_ignored_path(raw_dir):
+                    continue
+                git_coll = GitCollector(repo_path=raw_dir)
+                if git_coll.is_git_repo():
+                    last_repo = raw_dir
+
+    return last_repo
+
+def _get_today_commit_count(repo_path: str) -> int:
+    """Returns the number of commits made today in the given repository."""
+    if not repo_path:
+        return 0
+    try:
+        today_str = datetime.now().strftime("%Y-%m-%d 00:00:00")
+        result = subprocess.run(
+            ["git", "log", f"--since={today_str}", "--oneline"],
+            cwd=repo_path, capture_output=True, text=True, timeout=5,
+            encoding="utf-8", errors="replace"
+        )
+        return len([l for l in result.stdout.splitlines() if l.strip()])
+    except Exception:
+        return 0
+
+def discover_all_active_projects() -> List[Dict[str, Any]]:
+    """
+    Discovers ALL git repositories the user worked on today by scanning:
+    1. Current workspace and app repository
+    2. The last active repository from terminal history
+    3. All git repositories mentioned in PowerShell history (cd targets, file paths, etc.)
+    4. Sibling repositories in active project folders
+    Checks each repo for commits made today and uncommitted changes.
+    """
+    visited_repos = set()
+
+    # 1. Current workspace / app directory root
+    backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    for p in [os.getcwd(), backend_dir]:
+        try:
+            res = subprocess.run(
+                ["git", "rev-parse", "--show-toplevel"],
+                cwd=p, capture_output=True, text=True, timeout=2,
+                encoding="utf-8", errors="replace"
+            )
+            if res.returncode == 0 and res.stdout.strip():
+                root = os.path.normpath(res.stdout.strip())
+                if not _is_ignored_path(root):
+                    visited_repos.add(root)
+        except Exception:
+            pass
+
+    # 2. Last active workspace
+    last_active = detect_active_workspace_path()
+    if last_active and not _is_ignored_path(last_active):
+        visited_repos.add(os.path.normpath(last_active))
+
+    # 3. Scan PowerShell history for any directories and cd targets
     appdata = os.getenv("APPDATA")
     if appdata:
         ps_history = os.path.join(appdata, r"Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt")
@@ -55,47 +122,112 @@ def detect_recent_workspaces() -> List[Dict[str, Any]]:
             try:
                 with open(ps_history, "r", encoding="utf-8", errors="replace") as f:
                     lines = [line.strip() for line in f.readlines() if line.strip()]
-                for line in reversed(lines[-250:]):
-                    clean = line.strip()
-                    if clean.lower().startswith("cd "):
-                        raw_path = clean[3:].strip().strip('"\'')
+                for line in lines[-1000:]:
+                    # Extract cd/pushd/Set-Location paths
+                    cd_match = re.match(r'(?i)^(?:cd|pushd|Set-Location)\s+["\']?([^"\'\n\r]+)["\']?', line)
+                    candidate_paths = []
+                    if cd_match:
+                        candidate_paths.append(cd_match.group(1).strip())
+                    
+                    # Also find any absolute drive paths in the line
+                    candidate_paths.extend(re.findall(r'[a-zA-Z]:\\[a-zA-Z0-9_.\-\\\s]+', line))
+
+                    for raw_path in candidate_paths:
+                        raw_path = os.path.expanduser(raw_path.strip().rstrip('\\'))
                         if os.path.isabs(raw_path) and os.path.isdir(raw_path):
-                            norm = os.path.normcase(os.path.realpath(raw_path))
-                            if norm not in seen_paths:
-                                c = GitCollector(repo_path=raw_path)
-                                if c.is_git_repo():
-                                    seen_paths.add(norm)
-                                    status = c.get_status_porcelain()
-                                    detected.append({
-                                        "name": c.get_repo_name(),
-                                        "path": raw_path,
-                                        "branch": c.get_current_branch(),
-                                        "staged": len(status.get("staged", [])),
-                                        "modified": len(status.get("unstaged", [])),
-                                        "untracked": len(status.get("untracked", [])),
-                                        "is_active": False,
-                                    })
+                            if _is_ignored_path(raw_path):
+                                continue
+                            try:
+                                res = subprocess.run(
+                                    ["git", "rev-parse", "--show-toplevel"],
+                                    cwd=raw_path, capture_output=True, text=True, timeout=2,
+                                    encoding="utf-8", errors="replace"
+                                )
+                                if res.returncode == 0 and res.stdout.strip():
+                                    root = os.path.normpath(res.stdout.strip())
+                                    if not _is_ignored_path(root):
+                                        visited_repos.add(root)
+                            except Exception:
+                                pass
             except Exception:
                 pass
 
-    return detected
+    today_str = datetime.now().strftime("%Y-%m-%d 00:00:00")
+    active_projects = []
+
+    for repo_path in visited_repos:
+        if not os.path.isdir(repo_path):
+            continue
+
+        # Today's commits (short hash + message)
+        try:
+            res = subprocess.run(
+                ["git", "log", f"--since={today_str}", "--format=%h %s"],
+                cwd=repo_path, capture_output=True, text=True, timeout=5,
+                encoding="utf-8", errors="replace"
+            )
+            commits = [l.strip() for l in res.stdout.splitlines() if l.strip()]
+        except Exception:
+            commits = []
+
+        # Current branch
+        try:
+            res = subprocess.run(
+                ["git", "branch", "--show-current"],
+                cwd=repo_path, capture_output=True, text=True, timeout=3,
+                encoding="utf-8", errors="replace"
+            )
+            branch = res.stdout.strip() or "unknown"
+        except Exception:
+            branch = "unknown"
+
+        # Uncommitted change count
+        try:
+            res = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=repo_path, capture_output=True, text=True, timeout=3,
+                encoding="utf-8", errors="replace"
+            )
+            changes = len([l for l in res.stdout.splitlines() if l.strip()])
+        except Exception:
+            changes = 0
+
+        # Skip repos with zero activity today
+        if len(commits) == 0 and changes == 0:
+            continue
+
+        active_projects.append({
+            "repo_name": os.path.basename(repo_path),
+            "repo_path": repo_path,
+            "branch": branch,
+            "commits_today": commits,
+            "commit_count": len(commits),
+            "uncommitted_changes": changes,
+        })
+
+    # Most active project first
+    active_projects.sort(key=lambda x: x["commit_count"], reverse=True)
+    return active_projects
 
 def aggregate_context(config: ContextConfigRequest) -> Dict[str, Any]:
     """
-    Coordinates context collection across Git, Terminal, and Browser.
-    Includes active workspaces list for multi-project switching.
+    Coordinates context collection across Git, Terminal, and Browser
+    with user-defined toggles and sanitization applied.
+    Automatically resolves the active repo path if not explicitly provided.
     """
-    workspaces = detect_recent_workspaces()
     resolved_repo_path = config.repo_path
-
     if not resolved_repo_path or resolved_repo_path == ".":
-        # Default to first active workspace if available
-        if workspaces:
-            resolved_repo_path = workspaces[0]["path"]
+        detected = detect_active_workspace_path()
+        if detected:
+            resolved_repo_path = detected
+
+    today_commits = _get_today_commit_count(resolved_repo_path)
+    active_projects = discover_all_active_projects()
 
     aggregated: Dict[str, Any] = {
         "repo_path": resolved_repo_path,
-        "workspaces": workspaces,
+        "today_commits": today_commits,
+        "active_projects": active_projects,
         "git": None,
         "terminal": None,
         "browser": None,

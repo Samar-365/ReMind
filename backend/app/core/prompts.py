@@ -41,6 +41,22 @@ def build_handoff_user_prompt(context: Dict[str, Any], user_notes: str = "") -> 
     if user_notes and user_notes.strip():
         parts.append(f"### Developer Notes:\n{user_notes.strip()}\n")
 
+    # All active projects worked on today
+    active_projects = context.get("active_projects", [])
+    if active_projects:
+        parts.append("### All Projects Worked On Today:")
+        for proj in active_projects:
+            parts.append(f"\n**{proj['repo_name']}** (branch: {proj['branch']}) — {proj['commit_count']} commits today")
+            if proj.get("uncommitted_changes", 0) > 0:
+                parts.append(f"Uncommitted changes: {proj['uncommitted_changes']}")
+            if proj.get("commits_today"):
+                for commit in proj["commits_today"][:8]:
+                    parts.append(f"  - {commit}")
+                if len(proj["commits_today"]) > 8:
+                    parts.append(f"  ... and {len(proj['commits_today']) - 8} more")
+        parts.append("")
+
+    # Primary repo detailed diffs
     # Git
     git_data = context.get("git")
     if git_data and git_data.get("is_repo"):
