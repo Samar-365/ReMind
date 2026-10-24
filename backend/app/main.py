@@ -16,6 +16,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.api.context import router as context_router
+
+app.include_router(context_router)
+
 @app.get("/health")
 def health_check():
     return {
@@ -31,3 +35,4 @@ def root():
         "message": "Tomorrow-Me Handoff (ReMind) Backend is running.",
         "docs_url": "/docs",
     }
+
