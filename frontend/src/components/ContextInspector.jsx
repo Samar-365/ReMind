@@ -126,18 +126,56 @@ export default function ContextInspector({ context }) {
 
           {activeTab === 'browser' && (
             <div>
+              <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#FFFFFF', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
+                <p className="text-xs font-medium" style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Add Active Reference Tab:</p>
+                <div className="flex gap-2">
+                  <input
+                    id="new-tab-title"
+                    type="text"
+                    placeholder="Page Title (e.g. FastAPI Documentation)"
+                    className="form-input"
+                    style={{ fontSize: '0.75rem', padding: '0.4rem 0.6rem' }}
+                  />
+                  <input
+                    id="new-tab-url"
+                    type="text"
+                    placeholder="https://..."
+                    className="form-input"
+                    style={{ fontSize: '0.75rem', padding: '0.4rem 0.6rem' }}
+                  />
+                  <button
+                    onClick={async () => {
+                      const tInput = document.getElementById('new-tab-title');
+                      const uInput = document.getElementById('new-tab-url');
+                      if (uInput && uInput.value) {
+                        await fetch('http://localhost:8001/api/context/browser/tabs', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify([{ title: tInput.value || uInput.value, url: uInput.value, selected: true }])
+                        });
+                        window.location.reload();
+                      }
+                    }}
+                    className="btn-primary"
+                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+                  >
+                    Add Tab
+                  </button>
+                </div>
+              </div>
+
               {browser.tabs && browser.tabs.length > 0 ? (
                 <div className="space-y-2" style={{ maxHeight: '18rem', overflowY: 'auto' }}>
                   {browser.tabs.map((tab, i) => (
                     <div key={i} style={{ padding: '0.6rem 0.8rem', background: '#FFFFFF', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
                       <p className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{tab.title}</p>
-                      <p className="text-xs" style={{ color: 'var(--accent-blue)' }}>{tab.url}</p>
+                      <a href={tab.url} target="_blank" rel="noreferrer" className="text-xs" style={{ color: 'var(--accent-blue)', textDecoration: 'underline' }}>{tab.url}</a>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ padding: '2rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', background: '#FFFFFF', border: '1px dashed var(--border-light)', borderRadius: '6px' }}>
-                  No browser tabs captured. Submit active tabs through the API or browser extension.
+                <div style={{ padding: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', background: '#FFFFFF', border: '1px dashed var(--border-light)', borderRadius: '6px' }}>
+                  No reference tabs added yet. Use the inputs above to save reference links for tomorrow's brief.
                 </div>
               )}
             </div>

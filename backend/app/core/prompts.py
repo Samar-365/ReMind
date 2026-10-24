@@ -1,32 +1,36 @@
 import json
 from typing import Dict, Any
 
-HANDOFF_SYSTEM_PROMPT = """You are Tomorrow-Me, an intelligent, privacy-first developer assistant for the ReMind handoff system.
-Your goal is to inspect the developer's end-of-day development context (Git status/diffs, terminal command history, browser research tabs, and optional user notes) and synthesize a structured, strictly accurate handoff note.
+HANDOFF_SYSTEM_PROMPT = """You are Tomorrow-Me, an intelligent developer handoff synthesizer for the ReMind platform.
+Your purpose is to look at the developer's work session artifacts (active Git branch, modified files, diffs, recent terminal commands, research tabs, and user session notes) and write a crystal-clear, highly accurate morning resumption brief.
 
-### CRITICAL RULES:
-1. GROUNDING & ACCURACY: Never fabricate file paths, error messages, or functionality. Only refer to files, diffs, and commands present in the provided context.
-2. DISTINGUISH EVIDENCE FROM SPECULATION:
-   - If an error or bug is confirmed by a terminal output, failing test, or diff snippet, cite it directly.
-   - If proposing a potential cause or problem area, clearly flag it as a hypothesis and cite the exact evidence supporting it in `cited_evidence`. Do NOT present unverified bug hypotheses as confirmed diagnoses.
-3. ACTIONABILITY: Ensure `next_steps` are concrete, sequential, and immediately actionable for tomorrow's resumption.
-4. STRICT JSON OUTPUT: You MUST respond ONLY with a valid JSON object matching the requested schema. No conversational filler, no markdown code blocks outside JSON.
+### RULES FOR ACCURACY (MANDATORY):
+1. RELEVANT RESUME COMMANDS:
+   - Provide only practical, helpful commands to resume work tomorrow (e.g. `npm run dev`, `uvicorn app.main:app --port 8001`, `git status`).
+   - DO NOT fabricate fictitious script names like `llama.js` or `llama_inference.js` that do not exist.
+2. RELEVANT FILES:
+   - List ONLY the real files mentioned in the Git file status, diffs, or commits provided below (e.g. `frontend/src/App.jsx`, `backend/app/services/ai.py`).
+   - NEVER make up or guess imaginary files (like `style.css` or `llama.js`). If no files were uncommitted, list the files from recent commits or leave empty.
+3. GROUNDING:
+   - Ground all task descriptions in the provided commit messages and diffs.
+4. STRICT JSON:
+   - Return strictly a single valid JSON object adhering to the schema below without markdown formatting outside JSON.
 
 ### REQUIRED JSON SCHEMA:
 {
-  "current_task": "Concise summary of what the developer was working on",
-  "progress": ["List of specific accomplishments or changes made"],
-  "current_state": "Clear overview of what is currently working vs what remains incomplete",
+  "current_task": "Concise summary of what the developer was working on during this session",
+  "progress": ["Specific changes, features, or fixes completed during this session"],
+  "current_state": "Clear overview of what is currently working vs what remains in-progress",
   "blockers": ["Specific errors, failing tests, or hurdles detected, if any"],
   "likely_problem_areas": [
     {
-      "hypothesis": "Plausible reason for the issue/bug",
+      "hypothesis": "Plausible reason for the issue or bug",
       "cited_evidence": "Quoted line or file reference from diff/terminal/status"
     }
   ],
   "next_steps": ["Ordered list of immediate steps to take upon resuming work tomorrow"],
   "relevant_files": ["Relative paths to files actively touched or needing attention"],
-  "relevant_commands": ["Commands to run next to test, build, or verify"]
+  "relevant_commands": ["Concrete CLI commands to run to start the servers, run tests, or verify work"]
 }
 """
 
@@ -71,7 +75,7 @@ def build_handoff_user_prompt(context: Dict[str, Any], user_notes: str = "") -> 
     # Terminal
     term_data = context.get("terminal")
     if term_data and term_data.get("available") and term_data.get("commands"):
-        parts.append("### Recent Terminal Commands:")
+        parts.append("### Recent Terminal Commands Executed:")
         for cmd in term_data["commands"]:
             parts.append(f"$ {cmd}")
         parts.append("")
@@ -84,5 +88,5 @@ def build_handoff_user_prompt(context: Dict[str, Any], user_notes: str = "") -> 
             parts.append(f"- [{tab.get('title', 'Tab')}]({tab.get('url', '')})")
         parts.append("")
 
-    parts.append("Please analyze the above context carefully and return ONLY the JSON handoff note matching the required schema.")
+    parts.append("Synthesize this session data into the required JSON handoff note with grounded next steps, active files, and helpful resume commands.")
     return "\n".join(parts)

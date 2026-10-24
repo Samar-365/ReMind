@@ -1,5 +1,6 @@
 import os
 import platform
+import subprocess
 from typing import List, Dict, Any
 from app.core.sanitizer import scrub_secrets
 
@@ -52,8 +53,17 @@ class TerminalCollector:
             with open(history_path, "r", encoding="utf-8", errors="replace") as f:
                 lines = [line.strip() for line in f.readlines() if line.strip()]
 
+            # Deduplicate consecutive identical commands while preserving order
+            deduped = []
+            for line in lines:
+                if not deduped or deduped[-1] != line:
+                    deduped.append(line)
+
+            # Filter out noisy single-character commands or clear screen
+            meaningful = [c for c in deduped if c.lower() not in ("cls", "clear", "exit", "ls", "dir", "cd ..", "cd.", "w")]
+
             # Extract last N commands
-            recent = lines[-self.max_commands:]
+            recent = meaningful[-self.max_commands:] if meaningful else deduped[-self.max_commands:]
 
             # Filter & scrub each command
             scrubbed_commands = []
