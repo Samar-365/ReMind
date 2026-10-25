@@ -3,7 +3,10 @@ import os
 import ctypes
 from ctypes import wintypes
 from typing import List, Dict, Any, Optional
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None
 from app.core.sanitizer import scrub_secrets
 
 IGNORED_TITLES = {
