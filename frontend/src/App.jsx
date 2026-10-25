@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
   RotateCw, 
-  AlertCircle 
+  AlertCircle,
+  ArrowLeft 
 } from 'lucide-react';
 
 import SessionHero from './components/SessionHero';
 import ResumptionCard from './components/ResumptionCard';
 import ContextInspector from './components/ContextInspector';
 import HistoryList from './components/HistoryList';
+import LandingPage from './components/LandingPage';
 
 import { 
   fetchAggregatedContext, 
@@ -21,6 +23,7 @@ import {
 } from './services/api';
 
 export default function App() {
+  const [view, setView] = useState('landing');
   const [context, setContext] = useState(null);
   const [history, setHistory] = useState([]);
   const [selectedNote, setSelectedNote] = useState(null);
@@ -139,6 +142,10 @@ export default function App() {
            item.repo_name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  if (view === 'landing') {
+    return <LandingPage onLaunchApp={() => setView('dashboard')} />;
+  }
+
   return (
     <div className="app-container">
       {/* Top Header Navigation */}
@@ -150,6 +157,9 @@ export default function App() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="header-title" style={{ margin: 0 }}>ReMind</h1>
+              <span className="pill pill-blue" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
+                Dashboard
+              </span>
             </div>
             <p className="text-xs text-muted">
               Tomorrow-Me Developer Resumption Assistant
@@ -158,6 +168,16 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setView('landing')}
+            className="btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', padding: '0.4rem 0.8rem' }}
+            title="Return to Landing Page"
+          >
+            <ArrowLeft size={13} />
+            <span>Product Overview</span>
+          </button>
+
           <button
             onClick={loadDashboard}
             className="btn-secondary"
