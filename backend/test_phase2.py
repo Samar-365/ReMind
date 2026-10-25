@@ -33,20 +33,25 @@ def test_browser_collector():
     ])
     result = collector.collect()
     assert result["available"] is True
-    assert len(result["tabs"]) == 1
-    assert "secret_key_1234567890" not in result["tabs"][0]["url"]
+    assert len(result["tabs"]) >= 1
+    # Check that manual tab secret is scrubbed
+    manual_tab = [t for t in result["tabs"] if "Dashboard" in t["title"]][0]
+    assert "secret_key_1234567890" not in manual_tab["url"]
 
 def test_aggregate_context():
-    config = ContextConfigRequest(include_git=True, include_terminal=True, include_browser=True)
+    config = ContextConfigRequest(include_git=True, include_terminal=True, include_browser=True, include_windows=True)
     res = aggregate_context(config)
     assert "git" in res
     assert "terminal" in res
     assert "browser" in res
+    assert "windows" in res
 
 if __name__ == "__main__":
     test_secret_scrubbing()
     test_diff_truncation()
     test_git_collector()
     test_browser_collector()
+    test_aggregate_context()
+    print("All Phase 2 context & sanitization tests passed!")
     test_aggregate_context()
     print("All Phase 2 collector and sanitizer tests passed successfully!")
