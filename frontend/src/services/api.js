@@ -18,6 +18,7 @@ export async function fetchAggregatedContext(config = {}) {
       include_git: true,
       include_terminal: true,
       include_browser: true,
+      include_windows: true,
       ...config,
     }),
   });

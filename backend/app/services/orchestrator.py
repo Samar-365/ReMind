@@ -28,6 +28,7 @@ class HandoffOrchestrator:
             include_git=request.include_git,
             include_terminal=request.include_terminal,
             include_browser=request.include_browser,
+            include_windows=request.include_windows,
             terminal_command_count=request.terminal_command_count,
         )
         context = aggregate_context(config)
@@ -52,7 +53,8 @@ class HandoffOrchestrator:
         git_stat = context.get("git", {}).get("diff_stat", "No diffs") if context.get("git") else "Git disabled"
         term_count = len(context.get("terminal", {}).get("commands", [])) if context.get("terminal") else 0
         tab_count = len(context.get("browser", {}).get("tabs", [])) if context.get("browser") else 0
-        raw_summary = f"Branch: {branch} | Diffs: {git_stat.strip()[:60]} | Terminal: {term_count} cmds | Tabs: {tab_count}"
+        win_count = len(context.get("windows", {}).get("windows", [])) if context.get("windows") else 0
+        raw_summary = f"Branch: {branch} | Diffs: {git_stat.strip()[:50]} | Cmds: {term_count} | Tabs: {tab_count} | Windows: {win_count}"
 
         # 4. Save to Database
         record = HandoffRecord(

@@ -3,10 +3,10 @@ import {
   ChevronDown, 
   ChevronUp, 
   Eye, 
-  CheckCircle, 
   Terminal, 
   Globe, 
-  FileDiff 
+  FileDiff,
+  AppWindow 
 } from 'lucide-react';
 
 export default function ContextInspector({ context }) {
@@ -18,6 +18,7 @@ export default function ContextInspector({ context }) {
   const git = context?.git || {};
   const terminal = context?.terminal || {};
   const browser = context?.browser || {};
+  const windows = context?.windows || {};
 
   return (
     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -47,10 +48,6 @@ export default function ContextInspector({ context }) {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="pill pill-green" style={{ fontSize: '0.75rem' }}>
-            <CheckCircle size={12} />
-            Secrets Masked
-          </span>
           {isOpen ? <ChevronUp size={16} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={16} style={{ color: 'var(--text-muted)' }} />}
         </div>
       </button>
@@ -84,6 +81,15 @@ export default function ContextInspector({ context }) {
             >
               <Globe size={13} />
               <span>Reference Tabs ({browser.tabs?.length || 0})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('windows')}
+              className={activeTab === 'windows' ? 'btn-primary' : 'btn-secondary'}
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+            >
+              <AppWindow size={13} />
+              <span>Active Windows ({windows.windows?.length || 0})</span>
             </button>
           </div>
 
@@ -176,6 +182,51 @@ export default function ContextInspector({ context }) {
               ) : (
                 <div style={{ padding: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', background: '#FFFFFF', border: '1px dashed var(--border-light)', borderRadius: '6px' }}>
                   No reference tabs added yet. Use the inputs above to save reference links for tomorrow's brief.
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'windows' && (
+            <div>
+              {windows.windows && windows.windows.length > 0 ? (
+                <div className="space-y-2" style={{ maxHeight: '18rem', overflowY: 'auto' }}>
+                  {windows.windows.map((win, i) => (
+                    <div key={i} style={{ 
+                      padding: '0.6rem 0.85rem', 
+                      background: '#FFFFFF', 
+                      border: '1px solid var(--border-light)', 
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '0.75rem'
+                    }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div className="flex items-center gap-2" style={{ marginBottom: '0.2rem' }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                            {win.app_name}
+                          </span>
+                          <span className="pill pill-default" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
+                            {win.category}
+                          </span>
+                          <span className="text-xs text-muted" style={{ fontSize: '0.65rem' }}>
+                            PID {win.pid}
+                          </span>
+                        </div>
+                        <p className="font-mono text-xs text-secondary truncate" style={{ fontSize: '0.78rem', margin: 0 }}>
+                          {win.title}
+                        </p>
+                      </div>
+                      <span className="pill pill-green" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem', flexShrink: 0 }}>
+                        Scrubbed
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: '2rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', background: '#FFFFFF', border: '1px dashed var(--border-light)', borderRadius: '6px' }}>
+                  No active desktop windows detected.
                 </div>
               )}
             </div>

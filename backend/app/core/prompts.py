@@ -12,8 +12,10 @@ Your purpose is to look at the developer's work session artifacts (active Git br
    - List ONLY the real files mentioned in the Git file status, diffs, or commits provided below (e.g. `frontend/src/App.jsx`, `backend/app/services/ai.py`).
    - NEVER make up or guess imaginary files (like `style.css` or `llama.js`). If no files were uncommitted, list the files from recent commits or leave empty.
 3. GROUNDING:
-   - Ground all task descriptions in the provided commit messages and diffs.
-4. STRICT JSON:
+   - Ground all task descriptions in the provided commit messages, diffs, and open window titles.
+4. ACTIVE WINDOWS & CONTEXT:
+   - Use the titles of open IDE windows (e.g. active file open), browser research tabs, and terminals to determine the exact work in progress and relevant files.
+5. STRICT JSON:
    - Return strictly a single valid JSON object adhering to the schema below without markdown formatting outside JSON.
 
 ### REQUIRED JSON SCHEMA:
@@ -102,6 +104,14 @@ def build_handoff_user_prompt(context: Dict[str, Any], user_notes: str = "") -> 
         parts.append("### Active Research Browser Tabs:")
         for tab in browser_data["tabs"]:
             parts.append(f"- [{tab.get('title', 'Tab')}]({tab.get('url', '')})")
+        parts.append("")
+
+    # Active Windows
+    win_data = context.get("windows")
+    if win_data and win_data.get("available") and win_data.get("windows"):
+        parts.append("### Active Application Windows Open During Handoff:")
+        for win in win_data["windows"]:
+            parts.append(f"- [{win.get('category', 'App')}] {win.get('app_name', 'App')}: \"{win.get('title', '')}\"")
         parts.append("")
 
     parts.append("Synthesize this session data into the required JSON handoff note with grounded next steps, active files, and helpful resume commands.")

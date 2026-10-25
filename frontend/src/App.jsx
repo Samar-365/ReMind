@@ -77,7 +77,8 @@ export default function App() {
         user_notes: userNotes,
         include_git: true,
         include_terminal: true,
-        include_browser: true
+        include_browser: true,
+        include_windows: true
       });
 
       setStepStage('Structuring resumption checklist...');
@@ -149,9 +150,6 @@ export default function App() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="header-title" style={{ margin: 0 }}>ReMind</h1>
-              <span className="pill pill-default" style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>
-                v0.1.0
-              </span>
             </div>
             <p className="text-xs text-muted">
               Tomorrow-Me Developer Resumption Assistant

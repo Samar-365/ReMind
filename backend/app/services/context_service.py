@@ -7,12 +7,14 @@ from pydantic import BaseModel
 from app.collectors.git import GitCollector
 from app.collectors.terminal import TerminalCollector
 from app.collectors.browser import browser_collector
+from app.collectors.window import window_collector
 
 class ContextConfigRequest(BaseModel):
     repo_path: Optional[str] = None
     include_git: bool = True
     include_terminal: bool = True
     include_browser: bool = True
+    include_windows: bool = True
     terminal_command_count: int = 25
 
 def _is_ignored_path(path: str) -> bool:
@@ -231,6 +233,7 @@ def aggregate_context(config: ContextConfigRequest) -> Dict[str, Any]:
         "git": None,
         "terminal": None,
         "browser": None,
+        "windows": None,
     }
 
     if config.include_git:
@@ -243,5 +246,8 @@ def aggregate_context(config: ContextConfigRequest) -> Dict[str, Any]:
 
     if config.include_browser:
         aggregated["browser"] = browser_collector.collect()
+
+    if config.include_windows:
+        aggregated["windows"] = window_collector.collect()
 
     return aggregated

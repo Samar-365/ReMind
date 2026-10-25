@@ -9,7 +9,8 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
-  GitCommitHorizontal
+  GitCommitHorizontal,
+  AppWindow
 } from 'lucide-react';
 
 export default function SessionHero({ 
@@ -33,14 +34,7 @@ export default function SessionHero({
     <div className="card">
       <div className="flex flex-col lg-flex-row justify-between items-start gap-6">
         <div style={{ flex: 1 }}>
-          <div className="flex items-center gap-2" style={{ marginBottom: '0.25rem' }}>
-            <span className="pill pill-green" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>
-              ● Ready
-            </span>
-            <span className="text-xs text-muted">
-              Local AI Engine (No cloud transmission)
-            </span>
-          </div>
+          
 
           <h1 className="header-title flex items-center gap-2" style={{ fontSize: '1.5rem', marginTop: '0.25rem' }}>
             <FolderGit2 size={24} style={{ color: 'var(--accent-blue)' }} />
@@ -68,6 +62,10 @@ export default function SessionHero({
             <div className="flex items-center gap-1.5 text-muted">
               <Globe size={13} />
               <span>{context?.browser?.tabs?.length || 0} reference tabs</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-muted">
+              <AppWindow size={13} />
+              <span>{context?.windows?.windows?.length || 0} active windows</span>
             </div>
           </div>
 

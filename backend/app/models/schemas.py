@@ -22,6 +22,7 @@ class GenerateHandoffRequest(BaseModel):
     include_git: bool = True
     include_terminal: bool = True
     include_browser: bool = True
+    include_windows: bool = True
     terminal_command_count: int = 20
 
 class GenerateHandoffResponse(BaseModel):
