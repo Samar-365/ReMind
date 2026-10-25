@@ -1,5 +1,9 @@
 # Tomorrow-Me Handoff (ReMind)
 
+<p align="center">
+  <img src="./docs/cover.jpg" alt="ReMind - Tomorrow-Me Developer Resumption Assistant" width="100%" />
+</p>
+
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-latest-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev)
