@@ -16,29 +16,32 @@
 
 - **Local-First Privacy & Zero Cloud Leak**:
   - All inference runs directly on your hardware via local [Ollama](https://ollama.ai/) (`gemma2:2b` or `gemma2:9b`).
-  - No source code, diffs, or terminal history leaves your machine.
+  - No source code, diffs, terminal history, or window titles leave your machine.
 - **Built-in Secret Scrubber & Token Budgeter**:
-  - Automatically identifies and masks API keys (OpenAI, AWS, GitHub PATs, private keys, database passwords, and OAuth tokens).
+  - Automatically identifies and masks API keys (OpenAI, AWS, GitHub PATs, private keys, database connection strings, and OAuth tokens) across diffs, terminal commands, browser tabs, and desktop window titles.
   - Intelligently truncates large diffs to avoid context window blowup while prioritizing high-signal application files over lockfiles.
 - **Multi-Source Context Aggregation**:
-  - **Git**: Branch, porcelain file status (staged, unstaged, untracked), diff stats, uncommitted diffs, and recent commits.
-  - **Terminal**: Recent command history from Windows PowerShell (`ConsoleHost_history.txt`) and Bash/Zsh (`~/.bash_history`).
-  - **Browser**: Opt-in active tab titles and URLs for reference documentation and research tracking.
-- **Grounded 7-Section Handoff Schema (FR-06)**:
-  - Generates strictly typed, anti-hallucinatory notes:
-    1. **Current task**: What was actively being developed.
-    2. **Progress**: Specific modifications and accomplishments.
+  - **Multi-Project Git Discovery**: Automatically discovers **all git repositories** you worked on throughout the day, compiling today's commit logs, active branches, and uncommitted changes across every project.
+  - **Active Desktop Windows**: Detects open application windows on the desktop (IDE files being edited, terminals, browsers, developer tools) to ground resumption context in the exact files you were looking at before signing off.
+  - **Terminal History**: Recent command history from Windows PowerShell (`ConsoleHost_history.txt`) and Bash/Zsh (`~/.bash_history`).
+  - **Automatic Browser Research Tabs**: Auto-detects your active research tabs from Chrome, Microsoft Edge, and Brave local history, plus optional manual tab inputs.
+- **Grounded 7-Section Resumption Brief**:
+  - Generates strictly typed, anti-hallucinatory resumption notes:
+    1. **Current task**: Plain-English 1-line summary of where you left off.
+    2. **Progress**: Specific modifications and accomplishments across touched projects.
     3. **Current state**: Working components vs. work-in-progress.
-    4. **Blockers**: Known errors, failing tests, or hurdles.
-    5. **Likely problem areas**: Evidence-backed hypotheses paired with quoted evidence.
-    6. **Next steps**: Prioritized, actionable checklist to resume work.
-    7. **Relevant context**: Touched files and immediate resume commands.
-- **End-of-Day Automation & Notifications (FR-07)**:
+    4. **Roadblocks & Hypotheses**: Evidence-backed problem hypotheses paired with quoted evidence directly from diffs or terminal errors.
+    5. **Recommended Next Steps**: Interactive, clickable checklist to cross off tasks as you finish them tomorrow morning.
+    6. **Resume Context**:
+       - **Modified Files**: Badges showing the exact files you were editing.
+       - **Resume Commands**: Click-to-copy terminal commands (e.g. `$ npm run dev` or `$ uvicorn ...`) with 1-click clipboard copy.
+    7. **Markdown Export**: One-click button to copy the entire brief as Markdown (ready for daily standup notes, Slack, or Jira).
+- **End-of-Day Automation & Notifications**:
   - Background scheduler (`APScheduler`) automatically triggers at your configured end-of-day time.
-  - Native Windows 10/11 toast notifications (`Windows.UI.Notifications`) alert you when tomorrow's note is ready.
+  - Native Windows toast notifications alert you when tomorrow's resumption note is ready.
   - Graceful offline recovery checks if you missed a scheduled run while your device was sleeping or powered off.
-- **Modern Glassmorphic Dashboard (React + Vite)**:
-  - Dark-mode developer cockpit with interactive checklist, context inspector drawer, search/filter history, and one-click Markdown clipboard export.
+- **Modern Responsive Dashboard (React + Vite)**:
+  - Clean daylight UI with interactive checklist, multi-project activity cards, drawer-based Context & Sanitization Inspector, search/filter history, and one-click copy.
 
 ---
 
@@ -61,9 +64,10 @@ graph TD
     end
 
     subgraph Collectors["Context Collection Layer"]
-        GitColl["Git Status & Diff Collector"]
+        GitColl["Multi-Project Git & Diff Collector"]
         TermColl["Terminal History (PS & Bash)"]
-        BrowserColl["Browser Context Receiver"]
+        BrowserColl["Auto Browser Tab Collector"]
+        WindowColl["Desktop Active Windows Collector"]
     end
 
     subgraph Sanitizer["Sanitization & Preprocessing"]
@@ -89,10 +93,12 @@ graph TD
     Orchestrator --> GitColl
     Orchestrator --> TermColl
     Orchestrator --> BrowserColl
+    Orchestrator --> WindowColl
 
     GitColl --> RegexScrubber
     TermColl --> RegexScrubber
     BrowserColl --> RegexScrubber
+    WindowColl --> RegexScrubber
 
     RegexScrubber --> DiffSummarizer
     DiffSummarizer --> OllamaClient
@@ -131,11 +137,11 @@ pip install -r requirements.txt
 # Create your .env file
 cp .env.example .env
 
-# Start FastAPI Daemon
-uvicorn app.main:app --reload --port 8000
+# Start FastAPI Daemon on port 8001
+python -m uvicorn app.main:app --reload --port 8001
 ```
-- API Documentation (Swagger): `http://127.0.0.1:8000/docs`
-- Health Check: `http://127.0.0.1:8000/health`
+- API Documentation (Swagger): `http://127.0.0.1:8001/docs`
+- Health Check: `http://127.0.0.1:8001/health`
 
 ### 3. Frontend Dashboard Setup
 ```bash
@@ -157,7 +163,7 @@ Open **`http://localhost:5173`** in your browser to view the dashboard.
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `HOST` | `127.0.0.1` | Local daemon bind host |
-| `PORT` | `8000` | Local daemon port |
+| `PORT` | `8001` | Local daemon port |
 | `DEBUG` | `True` | Debug mode |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama inference API endpoint |
 | `OLLAMA_MODEL` | `gemma2:2b` | Target Gemma model (`gemma2:2b`, `gemma2:9b`) |
